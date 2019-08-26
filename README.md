@@ -8,17 +8,17 @@
 
 [SuperAdapter](https://github.com/MrDenua/SuperAdapter/blob/master/app/src/main/java/com/example/superadapter/adapter/SuperAdapter.java)
 
-## Screenshot
+# Screenshot
 
 ![screenshot](https://github.com/MrDenua/SuperAdapter/blob/master/screenshot/screenshot.png?raw=true)
 
-## Usage
+# Usage
 
 无需继承 SuperAdapter, 但需要为每种 Item 实现并继承继承抽象类 AbsViewHolder<T>, 并在改类中设置布局和绑定 View, 数据.
 
 AbsViewHolder<T> 代表一种 Item 类型, 其中泛型 T 为该 Item 对应的实体类 
 
-### SuperAdapter
+## SuperAdapter
 
 **Adapter 构造器**
 
@@ -36,7 +36,7 @@ AbsViewHolder<T> 代表一种 Item 类型, 其中泛型 T 为该 Item 对应的�
          void onItemClick(View v, Object itemData, int position);
      }
 
-### AbsViewHolder
+## AbsViewHolder
 
 **构造器, 必须重写带参数构造器, 否则无法使用, parent 与 Adapter#onCreateViewHolder 中 parent 一致**
 
@@ -50,7 +50,7 @@ AbsViewHolder<T> 代表一种 Item 类型, 其中泛型 T 为该 Item 对应的�
 
     public abstract void onBindData(@NonNull T data, int position);     
 
-## Sample
+# Sample
 
 **设置 Adapter**
 
