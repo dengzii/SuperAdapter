@@ -3,7 +3,7 @@
               android:orientation="vertical"
               android:layout_width="match_parent"
               android:layout_height="25dp"
-              android:background="@color/colorPrimaryDark">
+              android:background="@color/colorAccent">
 
     <TextView
             android:id="@+id/tv_title"

@@ -1,6 +1,7 @@
 package com.example.superadapter
 
 import android.os.Bundle
+import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
@@ -26,11 +27,19 @@ class MainActivity : AppCompatActivity() {
             Section("Section 1"),
             Item("Item 5", "content content content 5", R.mipmap.ic_launcher_round)
         )
+
         val recyclerView: RecyclerView = findViewById(R.id.rv_list)
         val adapter = SuperAdapter(data)
+        // 绑定数据类到 ViewHolder
         adapter.addViewHolderForType(Item::class.java, ItemViewHolder::class.java)
         adapter.addViewHolderForType(Header::class.java, HeaderViewHolder::class.java)
         adapter.addViewHolderForType(Section::class.java, SectionViewHolder::class.java)
+
+        adapter.setOnItemClickListener(object : SuperAdapter.OnItemClickListener {
+            override fun onItemClick(v: View?, itemData: Any?, position: Int) {
+
+            }
+        })
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
