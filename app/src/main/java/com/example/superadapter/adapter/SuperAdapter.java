@@ -1,11 +1,11 @@
-package com.example.superadapter.adapter;
+package com.xht.kuaiyouyi.adapter;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
+import android.support.v7.widget.RecyclerView;
 import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewGroup;
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -20,68 +20,73 @@ import java.util.List;
 @SuppressWarnings({"unused", "FieldCanBeLocal"})
 public class SuperAdapter extends RecyclerView.Adapter<AbsViewHolder> {
 
-    private List<Object> mItems;
+    private List<?> mItems;
     private Context mContext;
     private SparseArray<Class<? extends AbsViewHolder>> mItemViewHolderForType;
     private SparseArray<IViewHolderGenerator> mHolderGenerators;
+    private SparseArray<Class<?>> mTypes;
     private OnItemClickListener mOnItemClickListener;
     private OnItemLongClickListener mOnItemLongClickListener;
 
     private View.OnClickListener mItemClickListener = v -> {
-        if (mOnItemClickListener != null && v.getTag() != null){
+        if (mOnItemClickListener != null && v.getTag() != null) {
             AbsViewHolder.ItemInfo itemInfo = ((AbsViewHolder.ItemInfo) v.getTag());
-            mOnItemClickListener.onItemClick(itemInfo.absViewHolder.itemView,
+            mOnItemClickListener.onItemClick(itemInfo.source,
                     itemInfo.data, itemInfo.position);
         }
     };
 
     private View.OnLongClickListener mItemLongClickListener = v -> {
-        if (mOnItemLongClickListener != null && v.getTag() != null){
+        if (mOnItemLongClickListener != null && v.getTag() != null) {
             AbsViewHolder.ItemInfo itemInfo = ((AbsViewHolder.ItemInfo) v.getTag());
-            return mOnItemLongClickListener.onItemClick(itemInfo.absViewHolder.itemView,
+            return mOnItemLongClickListener.onItemClick(itemInfo.source,
                     itemInfo.data, itemInfo.position);
         }
         return false;
     };
 
-    public SuperAdapter(List<Object> data) {
+    public SuperAdapter(List<?> data) {
         this(null, data);
     }
 
-    public SuperAdapter(Context context, List<Object> data) {
+    public SuperAdapter(Context context, List<?> data) {
         mItems = data;
         mContext = context;
         mItemViewHolderForType = new SparseArray<>();
         mHolderGenerators = new SparseArray<>();
+        mTypes = new SparseArray<>();
     }
 
     public void setOnItemLongClickListener(OnItemLongClickListener longClickListener) {
         this.mOnItemLongClickListener = longClickListener;
     }
 
-    public void setOnItemClickListener(OnItemClickListener listener){
+    public void setOnItemClickListener(OnItemClickListener listener) {
         this.mOnItemClickListener = listener;
     }
 
-    public void addViewHolderForType(Class<?> type, Class<? extends AbsViewHolder> holder){
+    public void addViewHolderForType(Class<?> type, Class<? extends AbsViewHolder> holder) {
         mItemViewHolderForType.put(type.hashCode(), holder);
+        mTypes.put(type.hashCode(), type);
     }
 
-    public void addViewHolderGenerator(Class<?> type, IViewHolderGenerator generator){
+    public void addViewHolderGenerator(Class<?> type, IViewHolderGenerator generator) {
         mHolderGenerators.put(type.hashCode(), generator);
+        mTypes.put(type.hashCode(), type);
     }
 
     @NonNull
     @Override
     public AbsViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-        if (null != mHolderGenerators.get(i, null)){
+        if (null != mHolderGenerators.get(i, null)) {
             return mHolderGenerators.get(i).onCreateViewHolder(viewGroup);
         }
         if (null != mItemViewHolderForType.get(i, null)) {
             return getHolder(mItemViewHolderForType.get(i), viewGroup, i);
         }
-        throw new RuntimeException("No IViewHolderGenerator or AbsViewHolder found for item type "
-                + i);
+        throw new RuntimeException(
+                "No IViewHolderGenerator or AbsViewHolder found for item type " + mTypes.get(i)
+        );
     }
 
     @Override
@@ -108,18 +113,20 @@ public class SuperAdapter extends RecyclerView.Adapter<AbsViewHolder> {
     }
 
     private AbsViewHolder getHolder(Class<? extends AbsViewHolder> clazz,
-                                    ViewGroup parent, int type){
+                                    ViewGroup parent, int type) {
         Object result = null;
         try {
-            for (Constructor c:clazz.getDeclaredConstructors()) {
+            for (Constructor c : clazz.getDeclaredConstructors()) {
                 c.setAccessible(true);
-                result =  getViewHolder(c, parent);
-                if (result != null){
+                result = getViewHolder(c, parent);
+                if (result != null) {
                     break;
                 }
             }
-            if (result == null){
-                throw new RuntimeException("No suitable constructor find with " + clazz.getName());
+            if (result == null) {
+                throw new RuntimeException(
+                        "No suitable constructor find with ViewHolder " + clazz.getName()
+                );
             }
         } catch (IllegalAccessException e) {
             e.printStackTrace();
@@ -139,24 +146,24 @@ public class SuperAdapter extends RecyclerView.Adapter<AbsViewHolder> {
 
         boolean isInnerClass = parameterCount == 2 && c.getParameterTypes()[1] == ViewGroup.class;
         boolean isPublicClass = parameterCount == 1 && c.getParameterTypes()[0] == ViewGroup.class;
-        if (isInnerClass){
+        if (isInnerClass) {
             return c.newInstance(null, parent);
         }
-        if (isPublicClass){
+        if (isPublicClass) {
             return c.newInstance(parent);
         }
         return null;
     }
 
-    public interface OnItemClickListener{
-        void onItemClick(View v, Object itemData, int position);
+    public interface OnItemClickListener {
+        void onItemClick(View source, Object itemData, int position);
     }
 
-    public interface OnItemLongClickListener{
-        boolean onItemClick(View v, Object itemData, int position);
+    public interface OnItemLongClickListener {
+        boolean onItemClick(View source, Object itemData, int position);
     }
 
-    public interface IViewHolderGenerator{
+    public interface IViewHolderGenerator {
         @NonNull
         AbsViewHolder onCreateViewHolder(ViewGroup parent);
     }

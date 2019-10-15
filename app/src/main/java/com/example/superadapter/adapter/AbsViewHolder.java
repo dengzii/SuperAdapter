@@ -1,15 +1,16 @@
-package com.example.superadapter.adapter;
+package com.xht.kuaiyouyi.adapter;
 
 import android.content.Context;
+import android.support.annotation.IdRes;
+import android.support.annotation.LayoutRes;
+import android.support.annotation.NonNull;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
-import androidx.annotation.IdRes;
-import androidx.annotation.LayoutRes;
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
@@ -22,6 +23,24 @@ import java.util.List;
  *
  * 继承这个类时, 类必须为 public, 当子类为内部类时, 必须为 static, 否则 Adapter 无法实例化
  * 且必须调用父类的默认构造器, 默认该 ViewHolder 带一个空的宽度为 match_parent 的 FrameLayout
+ *
+ * usage  :
+ *
+ * <code>
+ *  public class MyViewHolder extends AbsViewHolder{
+ *      public MyViewHolder(@NonNull ViewGroup parent){
+ *          super(parent);
+ *          // setContentView(R.layout.item_user_data);
+ *      }
+ *      public void onCreate(@NonNull ViewGroup parent) {
+ *          // setContentView(R.layout.item_user_data);
+ *      }
+ *      public void onBindData(Object data, int position) {
+ *
+ *      }
+ *  }
+ *
+ * </code>
  *
  * </pre>
  */
@@ -41,7 +60,7 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
      * @param parent The item parent
      */
     public AbsViewHolder(@NonNull ViewGroup parent) {
-        this(parent, RecyclerView.VERTICAL);
+        this(parent, LinearLayoutManager.VERTICAL);
     }
 
     public AbsViewHolder(@NonNull ViewGroup parent, @RecyclerView.Orientation int orientation) {
@@ -63,21 +82,6 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
         } else {
             return getHorizontalAdaptContainer(parent);
         }
-    }
-
-    private static ViewGroup getVerticalAdaptContainer(View parent) {
-
-        FrameLayout frameLayout = new FrameLayout(parent.getContext());
-        frameLayout.setLayoutParams(new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT));
-        return frameLayout;
-    }
-
-    private static ViewGroup getHorizontalAdaptContainer(View parent) {
-        FrameLayout frameLayout = new FrameLayout(parent.getContext());
-        frameLayout.setLayoutParams(new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.MATCH_PARENT));
-        return frameLayout;
     }
 
     /**
@@ -138,6 +142,33 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
     }
 
     /**
+     * 当 Item 布局中 View 需要传递 onClick 事件到 Activity 时, 需要为该 View 设置点击事件并在
+     * 设置的点击事件内调用此方法
+     *
+     * @param view Item 中被点击的 view, 该view 会被传递到 activity 以识别是哪个 view 被点击了
+     */
+    protected void onViewClick(View view) {
+        if (mOnClickListener != null) {
+            view.setTag(getItemInfo(view));
+            mOnClickListener.onClick(view);
+        }
+    }
+
+    /**
+     * 参考 onViewClick(View view) 方法
+     *
+     * @param view Item 中被点击的 View
+     */
+    protected void onLongClick(View view) {
+        if (mOnLongClickListener != null) {
+            view.setTag(getItemInfo(view));
+            view.setClickable(true);
+            view.setLongClickable(true);
+            mOnLongClickListener.onLongClick(view);
+        }
+    }
+
+    /**
      * 设置该 item 的点击事件
      *
      * @param onClickListener The OnClickListener
@@ -158,17 +189,14 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
      */
     void onBindViewHolder(SuperAdapter adapter, List<Object> dataSet, Object data, int position) {
 
+        mData = (T) data;
         mDataSet = dataSet;
         mAdapter = adapter;
-        ItemInfo mItemInfo = new ItemInfo(null, -1, this);
-        mItemInfo.data = data;
-        mItemInfo.position = getAdapterPosition();
-        itemView.setTag(mItemInfo);
-        itemView.setClickable(true);
-        itemView.setLongClickable(true);
-        itemView.setOnClickListener(mOnClickListener);
-        itemView.setOnLongClickListener(mOnLongClickListener);
         onBindData((T) data, position);
+    }
+
+    private ItemInfo getItemInfo(View source) {
+        return new ItemInfo(mData, getAdapterPosition(), this, source);
     }
 
     private void addContent(View view) {
@@ -177,18 +205,36 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
         }
     }
 
+    private static ViewGroup getVerticalAdaptContainer(View parent) {
+
+        FrameLayout frameLayout = new FrameLayout(parent.getContext());
+        frameLayout.setLayoutParams(new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT));
+        return frameLayout;
+    }
+
+    private static ViewGroup getHorizontalAdaptContainer(View parent) {
+        FrameLayout frameLayout = new FrameLayout(parent.getContext());
+        frameLayout.setLayoutParams(new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        return frameLayout;
+    }
+
     /**
-     * 点击事件时当前 item 数据容器类
+     * 点击事件时当前 item 数据容器类, 里面包含了该当前 item 的一些基本信息,
+     * 比如触发事件的 View source, position, 当前 item 的数据对象
      */
     static class ItemInfo {
         Object data;
         int position;
         AbsViewHolder absViewHolder;
+        View source;
 
-        ItemInfo(Object data, int position, AbsViewHolder absViewHolder) {
+        ItemInfo(Object data, int position, AbsViewHolder absViewHolder, View source) {
             this.data = data;
             this.position = position;
             this.absViewHolder = absViewHolder;
+            this.source = source;
         }
     }
 }
