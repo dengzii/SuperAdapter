@@ -1,4 +1,4 @@
-package com.example.superadapter
+package com.dengzii.superadapter
 
 import android.os.Bundle
 import android.view.View
@@ -8,8 +8,9 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.superadapter.adapter.AbsViewHolder
-import com.example.superadapter.adapter.SuperAdapter
+import com.dengzii.adapter.AbsViewHolder
+import com.dengzii.adapter.SuperAdapter
+import com.example.superadapter.R
 
 class MainActivity : AppCompatActivity() {
 
@@ -69,7 +70,7 @@ class MainActivity : AppCompatActivity() {
         class ItemViewHolder(parent: ViewGroup) : AbsViewHolder<Item>(parent) {
             private lateinit var mTvTitle: TextView
             private lateinit var mTvContent: TextView
-            private lateinit var mIvImage:ImageView
+            private lateinit var mIvImage: ImageView
 
             override fun onCreate(parent: ViewGroup) {
                 setContentView(R.layout.item_item)
