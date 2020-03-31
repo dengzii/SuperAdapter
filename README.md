@@ -1,12 +1,12 @@
-## SuperAdapter
-
+## SuperAdapter 
+[ ![Download](https://api.bintray.com/packages/dengzi/maven/superadapter/images/download.svg) ](https://bintray.com/dengzi/maven/superadapter/_latestVersion)
 以不常见的角度实现 RecyclerView 适配器
 
 关键类
 
-[AbsViewHolder](https://github.com/MrDenua/SuperAdapter/blob/master/app/src/main/java/com/example/superadapter/adapter/AbsViewHolder.java)
+[AbsViewHolder](https://github.com/dengzii/SuperAdapter/blob/master/adapter/src/main/java/com/dengzii/superadapter/adapter/AbsViewHolder.java)
 
-[SuperAdapter](https://github.com/MrDenua/SuperAdapter/blob/master/app/src/main/java/com/example/superadapter/adapter/SuperAdapter.java)
+[SuperAdapter](https://github.com/dengzii/SuperAdapter/blob/master/adapter/src/main/java/com/dengzii/superadapter/adapter/SuperAdapter.java)
 
 # Screenshot
 
