@@ -33,7 +33,7 @@ public class SuperAdapter extends RecyclerView.Adapter<AbsViewHolder> {
         if (mOnItemClickListener != null && v.getTag() != null) {
             AbsViewHolder.ItemInfo itemInfo = ((AbsViewHolder.ItemInfo) v.getTag());
             mOnItemClickListener.onItemClick(itemInfo.source,
-                    itemInfo.data, itemInfo.position);
+                    itemInfo.data, itemInfo.position, itemInfo.other);
         }
     };
 
@@ -161,7 +161,7 @@ public class SuperAdapter extends RecyclerView.Adapter<AbsViewHolder> {
     }
 
     public interface OnItemClickListener {
-        void onItemClick(View source, Object itemData, int position);
+        void onItemClick(View source, Object itemData, int position, Object other);
     }
 
     public interface OnItemLongClickListener {

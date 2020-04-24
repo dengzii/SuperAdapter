@@ -37,8 +37,8 @@ class MainActivity : AppCompatActivity() {
         adapter.addViewHolderForType(Section::class.java, SectionViewHolder::class.java)
 
         adapter.setOnItemClickListener(object : SuperAdapter.OnItemClickListener {
-            override fun onItemClick(v: View?, itemData: Any?, position: Int) {
-
+            override fun onItemClick(source: View?, itemData: Any?, position: Int, other: Any?) {
+                // do something
             }
         })
 

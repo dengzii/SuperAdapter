@@ -146,11 +146,12 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
      * 当 Item 布局中 View 需要传递 onClick 事件到 Activity 时, 需要为该 View 设置点击事件并在
      * 设置的点击事件内调用此方法
      *
-     * @param view Item 中被点击的 view, 该view 会被传递到 activity 以识别是哪个 view 被点击了
+     * @param view  Item 中被点击的 view, 该view 会被传递到 activity 以识别是哪个 view 被点击了
+     * @param other 附加对象
      */
-    protected void onViewClick(View view) {
+    protected void onViewClick(View view, Object other) {
         if (mOnClickListener != null) {
-            view.setTag(getItemInfo(view));
+            view.setTag(getItemInfo(view, other));
             mOnClickListener.onClick(view);
         }
     }
@@ -158,11 +159,12 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
     /**
      * 参考 onViewClick(View view) 方法
      *
-     * @param view Item 中被点击的 View
+     * @param view  Item 中被点击的 View
+     * @param other 附加对象
      */
-    protected void onLongClick(View view) {
+    protected void onLongClick(View view, Object other) {
         if (mOnLongClickListener != null) {
-            view.setTag(getItemInfo(view));
+            view.setTag(getItemInfo(view, other));
             view.setClickable(true);
             view.setLongClickable(true);
             mOnLongClickListener.onLongClick(view);
@@ -196,8 +198,8 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
         onBindData((T) data, position);
     }
 
-    private ItemInfo getItemInfo(View source) {
-        return new ItemInfo(mData, getAdapterPosition(), this, source);
+    private ItemInfo getItemInfo(View source, Object other) {
+        return new ItemInfo(mData, getAdapterPosition(), this, source, other);
     }
 
     private void addContent(View view) {
@@ -230,12 +232,14 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
         int position;
         AbsViewHolder absViewHolder;
         View source;
+        Object other;
 
-        ItemInfo(Object data, int position, AbsViewHolder absViewHolder, View source) {
+        ItemInfo(Object data, int position, AbsViewHolder absViewHolder, View source, Object other) {
             this.data = data;
             this.position = position;
             this.absViewHolder = absViewHolder;
             this.source = source;
+            this.other = other;
         }
     }
 }
