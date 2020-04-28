@@ -70,6 +70,12 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
         onCreate((ViewGroup) itemView);
     }
 
+    public AbsViewHolder(@NonNull ViewGroup parent, FrameLayout.LayoutParams layoutParams) {
+        super(getAdaptContainer(parent, layoutParams));
+        this.mParent = parent;
+        onCreate((ViewGroup) itemView);
+    }
+
     /**
      * 生成一个给定方向尺寸固定的空白 FrameLayout
      *
@@ -220,6 +226,12 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
         FrameLayout frameLayout = new FrameLayout(parent.getContext());
         frameLayout.setLayoutParams(new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        return frameLayout;
+    }
+
+    private static ViewGroup getAdaptContainer(View parent, FrameLayout.LayoutParams layoutParams) {
+        FrameLayout frameLayout = new FrameLayout(parent.getContext());
+        frameLayout.setLayoutParams(layoutParams);
         return frameLayout;
     }
 
