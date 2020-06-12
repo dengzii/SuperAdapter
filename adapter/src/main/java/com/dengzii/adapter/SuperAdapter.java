@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -19,15 +20,28 @@ import java.util.List;
  * desc   : none
  */
 @SuppressWarnings({"unused", "FieldCanBeLocal"})
-public class SuperAdapter extends RecyclerView.Adapter<AbsViewHolder> {
+public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
+        implements ViewTreeObserver.OnGlobalLayoutListener {
 
-    private List<?> mItems;
+    public static final Object HEADER = new Header();
+    public static final Object FOOTER = new Footer();
+    public static final Object EMPTY = new Empty();
+
+    private static final SparseArray<Class<? extends AbsViewHolder>>
+            DEFAULT_VIEW_HOLDER_FOR_TYPE = new SparseArray<>();
+
+    private static final SparseArray<Class<?>> DEFAULT_DATA_TYPE = new SparseArray<>();
+
+    private List<Object> mDataSet;
+    private RecyclerView mRecyclerView = null;
     private Context mContext;
     private SparseArray<Class<? extends AbsViewHolder>> mItemViewHolderForType;
     private SparseArray<IViewHolderGenerator> mHolderGenerators;
     private SparseArray<Class<?>> mTypes;
     private OnItemClickListener mOnItemClickListener;
     private OnItemLongClickListener mOnItemLongClickListener;
+    // add EMPTY item to data set when data set is empty.
+    private boolean mEnableEmptyView = false;
 
     private View.OnClickListener mItemClickListener = v -> {
         if (mOnItemClickListener != null && v.getTag() != null) {
@@ -47,19 +61,71 @@ public class SuperAdapter extends RecyclerView.Adapter<AbsViewHolder> {
     };
 
     public SuperAdapter(List<?> data) {
-        this(null, data);
-    }
-
-    public SuperAdapter(Context context, List<?> data) {
-        mItems = data;
-        mContext = context;
+        //noinspection unchecked
+        mDataSet = (List<Object>) data;
         mItemViewHolderForType = new SparseArray<>();
         mHolderGenerators = new SparseArray<>();
         mTypes = new SparseArray<>();
     }
 
-    public void setItemData(List<?> data) {
-        mItems = data;
+    public static void setDefaultViewHolderForType(Class<?> type, Class<? extends AbsViewHolder> holder) {
+        DEFAULT_VIEW_HOLDER_FOR_TYPE.put(type.hashCode(), holder);
+        DEFAULT_DATA_TYPE.put(type.hashCode(), holder);
+    }
+
+    public void setItemData(List<Object> data) {
+        mDataSet = data;
+    }
+
+    public void addItemData(List<Object> data) {
+        mDataSet.addAll(data);
+    }
+
+    public void setEnableEmptyView(boolean enableEmptyView) {
+        mEnableEmptyView = enableEmptyView;
+    }
+
+    @Override
+    public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+        mRecyclerView = recyclerView;
+        mRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(this);
+    }
+
+    @Override
+    public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView);
+        mRecyclerView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+        mRecyclerView = null;
+    }
+
+    @Override
+    public void onGlobalLayout() {
+        if (mEnableEmptyView) {
+            updateEmptyView();
+        }
+    }
+
+    private void updateEmptyView() {
+        if (mDataSet.isEmpty()) {
+            mDataSet.add(EMPTY);
+            super.notifyDataSetChanged();
+        }
+        if (!mDataSet.isEmpty() && mDataSet.size() > 1) {
+            int indexOfEmpty = mDataSet.indexOf(EMPTY);
+            if (indexOfEmpty >= 0) {
+                mDataSet.remove(indexOfEmpty);
+                super.notifyItemRemoved(indexOfEmpty);
+            }
+        }
+    }
+
+    @Override
+    public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
+        super.onViewRecycled(holder);
+        if (holder instanceof AbsViewHolder) {
+            ((AbsViewHolder) holder).onRecycled();
+        }
     }
 
     public void setOnItemLongClickListener(OnItemLongClickListener longClickListener) {
@@ -82,12 +148,15 @@ public class SuperAdapter extends RecyclerView.Adapter<AbsViewHolder> {
 
     @NonNull
     @Override
-    public AbsViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
         if (null != mHolderGenerators.get(i, null)) {
             return mHolderGenerators.get(i).onCreateViewHolder(viewGroup);
         }
         if (null != mItemViewHolderForType.get(i, null)) {
             return getHolder(mItemViewHolderForType.get(i), viewGroup, i);
+        }
+        if (null != DEFAULT_VIEW_HOLDER_FOR_TYPE.get(i, null)) {
+            return getHolder(DEFAULT_VIEW_HOLDER_FOR_TYPE.get(i), viewGroup, i);
         }
         throw new RuntimeException(
                 "No IViewHolderGenerator or AbsViewHolder found for item type " + mTypes.get(i)
@@ -95,21 +164,24 @@ public class SuperAdapter extends RecyclerView.Adapter<AbsViewHolder> {
     }
 
     @Override
-    public void onBindViewHolder(@NonNull AbsViewHolder absViewHolder, int position) {
-        Object data = mItems.get(position);
-        absViewHolder.setOnClickListener(mItemClickListener);
-        absViewHolder.setOnLongClickListener(mItemLongClickListener);
-        absViewHolder.onBindViewHolder(this, mItems, data, position);
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
+        if (viewHolder instanceof AbsViewHolder) {
+            AbsViewHolder absViewHolder = ((AbsViewHolder) viewHolder);
+            Object data = mDataSet.get(position);
+            absViewHolder.setOnClickListener(mItemClickListener);
+            absViewHolder.setOnLongClickListener(mItemLongClickListener);
+            absViewHolder.onBindViewHolder(this, mDataSet, data, position);
+        }
     }
 
     @Override
     public int getItemViewType(int position) {
-        return mItems.get(position).getClass().hashCode();
+        return mDataSet.get(position).getClass().hashCode();
     }
 
     @Override
     public int getItemCount() {
-        return mItems.size();
+        return mDataSet.size();
     }
 
     @Override
@@ -136,9 +208,7 @@ public class SuperAdapter extends RecyclerView.Adapter<AbsViewHolder> {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
-        } catch (InstantiationException e) {
+        } catch (InvocationTargetException | InstantiationException e) {
             throw new RuntimeException(e);
         }
         return (AbsViewHolder) result;
@@ -158,6 +228,15 @@ public class SuperAdapter extends RecyclerView.Adapter<AbsViewHolder> {
             return c.newInstance(parent);
         }
         return null;
+    }
+
+    private static final class Header {
+    }
+
+    private static final class Footer {
+    }
+
+    private static final class Empty {
     }
 
     public interface OnItemClickListener {

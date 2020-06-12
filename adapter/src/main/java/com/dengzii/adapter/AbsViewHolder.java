@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
+import androidx.annotation.CallSuper;
 import androidx.annotation.IdRes;
 import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
@@ -47,6 +48,9 @@ import java.util.List;
  */
 @SuppressWarnings({"WeakerAccess", "unchecked", "unused"})
 public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
+
+    public static final FrameLayout.LayoutParams LAYOUT_MATCH_PARENT_VH = getLayoutParam(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
 
     private View.OnClickListener mOnClickListener;
     private View.OnLongClickListener mOnLongClickListener;
@@ -144,16 +148,37 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
         return mDataSet;
     }
 
+    @CallSuper
+    protected void onRecycled() {
+
+    }
+
     protected Context getContext() {
         return mParent.getContext();
     }
 
     /**
-     * 当 Item 布局中 View 需要传递 onClick 事件到 Activity 时, 需要为该 View 设置点击事件并在
-     * 设置的点击事件内调用此方法
+     * 为 View 绑定 onClick 事件
+     * 事件将在 SuperAdapter#setOnItemClickListener 中回调
+     *
+     * @see AbsViewHolder#onViewClick(View, Object)
+     *
+     * @param view 需要绑定 onClick 事件的 View
+     */
+    protected void bindViewClick(View view) {
+        if (mOnClickListener != null) {
+            view.setTag(getItemInfo(view, null));
+            view.setOnClickListener(mOnClickListener);
+        }
+    }
+
+    /**
+     * 当 Item 布局中 View 需要传递 onClick 事件到外部(eg. Activity, Fragment)时,
+     * 需要为该 View 设置点击事件并在设置的点击事件内调用此方法
+     * 事件将在 SuperAdapter#setOnItemClickListener 中回调
      *
      * @param view  Item 中被点击的 view, 该view 会被传递到 activity 以识别是哪个 view 被点击了
-     * @param other 附加对象
+     * @param other 附加对象,
      */
     protected void onViewClick(View view, Object other) {
         if (mOnClickListener != null) {
@@ -163,7 +188,7 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
     }
 
     /**
-     * 参考 onViewClick(View view) 方法
+     * @see AbsViewHolder#onViewClick(View, Object)
      *
      * @param view  Item 中被点击的 View
      * @param other 附加对象
@@ -227,6 +252,15 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
         frameLayout.setLayoutParams(new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.MATCH_PARENT));
         return frameLayout;
+    }
+
+    protected static FrameLayout.LayoutParams getLayoutParamMatchParentVH() {
+        return new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT);
+    }
+
+    protected static FrameLayout.LayoutParams getLayoutParam(int width, int height) {
+        return new FrameLayout.LayoutParams(width, height);
     }
 
     private static ViewGroup getAdaptContainer(View parent, FrameLayout.LayoutParams layoutParams) {

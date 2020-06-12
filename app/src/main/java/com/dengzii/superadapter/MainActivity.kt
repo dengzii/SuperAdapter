@@ -1,16 +1,17 @@
 package com.dengzii.superadapter
 
 import android.os.Bundle
-import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.dengzii.adapter.AbsViewHolder
 import com.dengzii.adapter.SuperAdapter
 import com.example.superadapter.R
+import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -18,7 +19,12 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val data = listOf(
+        SuperAdapter.setDefaultViewHolderForType(
+            SuperAdapter.EMPTY::class.java,
+            EmptyViewHolder::class.java
+        )
+
+        val data = mutableListOf(
             Header("Title", "subtitle subtitle."),
             Section("Section 0"),
             Item("Item 1", "content content content 1", R.mipmap.ic_launcher),
@@ -31,21 +37,33 @@ class MainActivity : AppCompatActivity() {
 
         val recyclerView: RecyclerView = findViewById(R.id.rv_list)
         val adapter = SuperAdapter(data)
+        adapter.setEnableEmptyView(true)
         // 绑定数据类到 ViewHolder
         adapter.addViewHolderForType(Item::class.java, ItemViewHolder::class.java)
         adapter.addViewHolderForType(Header::class.java, HeaderViewHolder::class.java)
         adapter.addViewHolderForType(Section::class.java, SectionViewHolder::class.java)
 
-        adapter.setOnItemClickListener(object : SuperAdapter.OnItemClickListener {
-            override fun onItemClick(source: View?, itemData: Any?, position: Int, other: Any?) {
-                // do something
+        adapter.setOnItemClickListener { _, itemData, _, _ ->
+            // do something
+            if (itemData == SuperAdapter.EMPTY) {
+                data.add(0, Item("Item 1", "content content content 1", R.mipmap.ic_launcher))
+                adapter.notifyItemInserted(0)
+                return@setOnItemClickListener
             }
-        })
+            Toast.makeText(this, itemData.toString(), Toast.LENGTH_SHORT).show()
+        }
+
+        button.setOnClickListener {
+            data.clear()
+            adapter.notifyDataSetChanged()
+        }
+        bt_add.setOnClickListener {
+            data.add(Item("Item 1", "content content content 1", R.mipmap.ic_launcher))
+            adapter.notifyDataSetChanged()
+        }
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
-
-
     }
 
     companion object {
@@ -83,6 +101,9 @@ class MainActivity : AppCompatActivity() {
                 mTvTitle.text = data.title
                 mTvContent.text = data.content
                 mIvImage.setImageResource(data.img)
+                itemView.setOnClickListener {
+                    onViewClick(it, null)
+                }
             }
         }
 
@@ -101,18 +122,18 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    class Header(
+    data class Header(
         var title: String,
         var content: String
     )
 
-    class Item(
+    data class Item(
         var title: String,
         var content: String,
         var img: Int
     )
 
-    class Section(
+    data class Section(
         var title: String
     )
 }
