@@ -33,7 +33,7 @@ javadoc {
         encoding "UTF-8"
         charSet 'UTF-8'
         author true
-        version '1.2.1'
+        version '1.2.3'
         links "http://docs.oracle.com/javase/7/docs/api"
         title 'superadapter'
     }

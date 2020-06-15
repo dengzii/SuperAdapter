@@ -9,11 +9,11 @@
 
 [SuperAdapter](https://github.com/dengzii/SuperAdapter/blob/master/adapter/src/main/java/com/dengzii/adapter/SuperAdapter.java)
 
-# Screenshot
+## Usage
 
-![screenshot](https://github.com/MrDenua/SuperAdapter/blob/master/screenshot/screenshot.png?raw=true)
-
-# Usage
+```
+implementation 'com.dengzii.adapter:1.2.3'
+```
 
 无需继承 SuperAdapter, 但需要为每种 Item 实现并继承继承抽象类 AbsViewHolder<T>, 并在改类中设置布局和绑定 View, 数据.
 
@@ -51,7 +51,7 @@ AbsViewHolder<T> 代表一种 Item 类型, 其中泛型 T 为该 Item 对应的�
 
     public abstract void onBindData(@NonNull T data, int position);     
 
-# Sample
+## Sample
 
 **设置 Adapter**
 
@@ -92,3 +92,7 @@ AbsViewHolder<T> 代表一种 Item 类型, 其中泛型 T 为该 Item 对应的�
             mIvImage.setImageResource(data.img)
         }
     }
+
+## Screenshot
+
+![screenshot](https://github.com/MrDenua/SuperAdapter/blob/master/screenshot/screenshot.png?raw=true)
