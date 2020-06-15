@@ -59,6 +59,8 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
     private List<Object> mDataSet;
     private ViewGroup mParent;
 
+    public Class<?> itemClazz;
+
     /**
      * 默认 item 会创建并添加一个空白布局, 这个构造器必须被调用, 且必须为 public
      *
@@ -161,9 +163,8 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
      * 为 View 绑定 onClick 事件
      * 事件将在 SuperAdapter#setOnItemClickListener 中回调
      *
-     * @see AbsViewHolder#onViewClick(View, Object)
-     *
      * @param view 需要绑定 onClick 事件的 View
+     * @see AbsViewHolder#onViewClick(View, Object)
      */
     protected void bindViewClick(View view) {
         if (mOnClickListener != null) {
@@ -188,10 +189,9 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
     }
 
     /**
-     * @see AbsViewHolder#onViewClick(View, Object)
-     *
      * @param view  Item 中被点击的 View
      * @param other 附加对象
+     * @see AbsViewHolder#onViewClick(View, Object)
      */
     protected void onLongClick(View view, Object other) {
         if (mOnLongClickListener != null) {

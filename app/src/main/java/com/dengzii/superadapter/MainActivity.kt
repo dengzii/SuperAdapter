@@ -19,7 +19,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        SuperAdapter.setDefaultViewHolderForType(
+        SuperAdapter.addDefaultViewHolderForType(
             SuperAdapter.EMPTY::class.java,
             EmptyViewHolder::class.java
         )
@@ -31,11 +31,11 @@ class MainActivity : AppCompatActivity() {
             Item("Item 2", "content content content 2", R.mipmap.ic_launcher_round),
             Item("Item 3", "content content content 3", R.mipmap.ic_launcher),
             Item("Item 4", "content content content 4", R.mipmap.ic_launcher_round),
+            "This item is no view holder",
             Section("Section 1"),
             Item("Item 5", "content content content 5", R.mipmap.ic_launcher_round)
         )
 
-        val recyclerView: RecyclerView = findViewById(R.id.rv_list)
         val adapter = SuperAdapter(data)
         adapter.setEnableEmptyView(true)
         // 绑定数据类到 ViewHolder
@@ -62,6 +62,7 @@ class MainActivity : AppCompatActivity() {
             adapter.notifyDataSetChanged()
         }
 
+        val recyclerView: RecyclerView = findViewById(R.id.rv_list)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
     }

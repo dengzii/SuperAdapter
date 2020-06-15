@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="no_view_holder_for_item">NO VIEW HOLDER IS SPECIFIED FOR THE ITEM TYPE.</string>
+</resources>

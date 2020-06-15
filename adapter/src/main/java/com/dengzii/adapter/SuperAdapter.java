@@ -4,7 +4,6 @@ import android.content.Context;
 import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -20,8 +19,7 @@ import java.util.List;
  * desc   : none
  */
 @SuppressWarnings({"unused", "FieldCanBeLocal"})
-public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
-        implements ViewTreeObserver.OnGlobalLayoutListener {
+public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     public static final Object HEADER = new Header();
     public static final Object FOOTER = new Footer();
@@ -68,7 +66,7 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         mTypes = new SparseArray<>();
     }
 
-    public static void setDefaultViewHolderForType(Class<?> type, Class<? extends AbsViewHolder> holder) {
+    public static void addDefaultViewHolderForType(Class<?> type, Class<? extends AbsViewHolder> holder) {
         DEFAULT_VIEW_HOLDER_FOR_TYPE.put(type.hashCode(), holder);
         DEFAULT_DATA_TYPE.put(type.hashCode(), holder);
     }
@@ -83,41 +81,6 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     public void setEnableEmptyView(boolean enableEmptyView) {
         mEnableEmptyView = enableEmptyView;
-    }
-
-    @Override
-    public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
-        super.onAttachedToRecyclerView(recyclerView);
-        mRecyclerView = recyclerView;
-        mRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(this);
-    }
-
-    @Override
-    public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
-        super.onDetachedFromRecyclerView(recyclerView);
-        mRecyclerView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-        mRecyclerView = null;
-    }
-
-    @Override
-    public void onGlobalLayout() {
-        if (mEnableEmptyView) {
-            updateEmptyView();
-        }
-    }
-
-    private void updateEmptyView() {
-        if (mDataSet.isEmpty()) {
-            mDataSet.add(EMPTY);
-            super.notifyDataSetChanged();
-        }
-        if (!mDataSet.isEmpty() && mDataSet.size() > 1) {
-            int indexOfEmpty = mDataSet.indexOf(EMPTY);
-            if (indexOfEmpty >= 0) {
-                mDataSet.remove(indexOfEmpty);
-                super.notifyItemRemoved(indexOfEmpty);
-            }
-        }
     }
 
     @Override
@@ -149,18 +112,18 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
+        AbsViewHolder viewHolder = null;
         if (null != mHolderGenerators.get(i, null)) {
-            return mHolderGenerators.get(i).onCreateViewHolder(viewGroup);
+            viewHolder = mHolderGenerators.get(i).onCreateViewHolder(viewGroup);
+        } else if (null != mItemViewHolderForType.get(i, null)) {
+            viewHolder = getHolder(mItemViewHolderForType.get(i), viewGroup, i);
+        } else if (null != DEFAULT_VIEW_HOLDER_FOR_TYPE.get(i, null)) {
+            viewHolder = getHolder(DEFAULT_VIEW_HOLDER_FOR_TYPE.get(i), viewGroup, i);
         }
-        if (null != mItemViewHolderForType.get(i, null)) {
-            return getHolder(mItemViewHolderForType.get(i), viewGroup, i);
+        if (viewHolder == null) {
+            viewHolder = new DefaultViewHolder(viewGroup);
         }
-        if (null != DEFAULT_VIEW_HOLDER_FOR_TYPE.get(i, null)) {
-            return getHolder(DEFAULT_VIEW_HOLDER_FOR_TYPE.get(i), viewGroup, i);
-        }
-        throw new RuntimeException(
-                "No IViewHolderGenerator or AbsViewHolder found for item type " + mTypes.get(i)
-        );
+        return viewHolder;
     }
 
     @Override
@@ -187,6 +150,40 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     @Override
     public long getItemId(int position) {
         return super.getItemId(position);
+    }
+
+    @Override
+    public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+        mRecyclerView = recyclerView;
+        mRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(this::onGlobalLayout);
+    }
+
+    @Override
+    public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView);
+        mRecyclerView.getViewTreeObserver().removeOnGlobalLayoutListener(this::onGlobalLayout);
+        mRecyclerView = null;
+    }
+
+    private void onGlobalLayout() {
+        if (mEnableEmptyView) {
+            updateEmptyView();
+        }
+    }
+
+    private void updateEmptyView() {
+        if (mDataSet.isEmpty()) {
+            mDataSet.add(EMPTY);
+            super.notifyDataSetChanged();
+        }
+        if (!mDataSet.isEmpty() && mDataSet.size() > 1) {
+            int indexOfEmpty = mDataSet.indexOf(EMPTY);
+            if (indexOfEmpty >= 0) {
+                mDataSet.remove(indexOfEmpty);
+                super.notifyItemRemoved(indexOfEmpty);
+            }
+        }
     }
 
     private AbsViewHolder getHolder(Class<? extends AbsViewHolder> clazz,
