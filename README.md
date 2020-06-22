@@ -11,13 +11,39 @@
 
 ## Usage
 
+添加依赖
+
 ```
-implementation 'com.dengzii.adapter:1.2.3'
+implementation "com.dengzii.adapter:$latestVersion"
 ```
 
+使用 Adapter
+
+```kotlin
+    val adapter = SuperAdapter(listOf("Item 1", "Item 2", "Item 3"))
+    adapter.addViewHolderForType(String::class.java, ItemViewHolder::class.java)
+    recyclerView.layoutManager = LinearLayoutManager(this)
+    recyclerView.adapter = adapter
+    
+    class ItemViewHolder(parent: ViewGroup) : AbsViewHolder<String>(parent) {
+        private lateinit var mTextView:TextView 
+        override fun onCreate(parent: ViewGroup) {
+            mTextView = TextView(context)
+            mTextView.layoutParams = getLayoutParam(
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT
+                    )
+            setContentView(mTextView)
+        }
+    
+        override fun onBindData(data: String, position: Int) {
+            mTextView.text = data
+        }
+    }
+```
 无需继承 SuperAdapter, 但需要为每种 Item 实现并继承继承抽象类 AbsViewHolder<T>, 并在改类中设置布局和绑定 View, 数据.
 
-AbsViewHolder<T> 代表一种 Item 类型, 其中泛型 T 为该 Item 对应的实体类 
+AbsViewHolder<T> 代表一种 Item 类型, 其中泛型 T 为该 Item 对应的实体类
 
 ## SuperAdapter
 

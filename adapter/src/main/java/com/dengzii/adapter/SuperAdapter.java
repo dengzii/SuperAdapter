@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -41,21 +42,27 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     // add EMPTY item to data set when data set is empty.
     private boolean mEnableEmptyView = false;
 
-    private View.OnClickListener mItemClickListener = v -> {
-        if (mOnItemClickListener != null && v.getTag() != null) {
-            AbsViewHolder.ItemInfo itemInfo = ((AbsViewHolder.ItemInfo) v.getTag());
-            mOnItemClickListener.onItemClick(itemInfo.source,
-                    itemInfo.data, itemInfo.position, itemInfo.other);
+    private View.OnClickListener mItemClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            if (mOnItemClickListener != null && v.getTag() != null) {
+                AbsViewHolder.ItemInfo itemInfo = ((AbsViewHolder.ItemInfo) v.getTag());
+                mOnItemClickListener.onItemClick(itemInfo.source,
+                        itemInfo.data, itemInfo.position, itemInfo.other);
+            }
         }
     };
 
-    private View.OnLongClickListener mItemLongClickListener = v -> {
-        if (mOnItemLongClickListener != null && v.getTag() != null) {
-            AbsViewHolder.ItemInfo itemInfo = ((AbsViewHolder.ItemInfo) v.getTag());
-            return mOnItemLongClickListener.onItemClick(itemInfo.source,
-                    itemInfo.data, itemInfo.position);
+    private View.OnLongClickListener mItemLongClickListener = new View.OnLongClickListener() {
+        @Override
+        public boolean onLongClick(View v) {
+            if (mOnItemLongClickListener != null && v.getTag() != null) {
+                AbsViewHolder.ItemInfo itemInfo = ((AbsViewHolder.ItemInfo) v.getTag());
+                return mOnItemLongClickListener.onItemClick(itemInfo.source,
+                        itemInfo.data, itemInfo.position);
+            }
+            return false;
         }
-        return false;
     };
 
     public SuperAdapter(List<?> data) {
@@ -152,24 +159,28 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         return super.getItemId(position);
     }
 
+    private ViewTreeObserver.OnGlobalLayoutListener
+            mRecyclerViewTreeObserver = new ViewTreeObserver.OnGlobalLayoutListener() {
+        @Override
+        public void onGlobalLayout() {
+            if (mEnableEmptyView) {
+                updateEmptyView();
+            }
+        }
+    };
+
     @Override
     public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
         super.onAttachedToRecyclerView(recyclerView);
         mRecyclerView = recyclerView;
-        mRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(this::onGlobalLayout);
+        mRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(mRecyclerViewTreeObserver);
     }
 
     @Override
     public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
         super.onDetachedFromRecyclerView(recyclerView);
-        mRecyclerView.getViewTreeObserver().removeOnGlobalLayoutListener(this::onGlobalLayout);
+        mRecyclerView.getViewTreeObserver().removeOnGlobalLayoutListener(mRecyclerViewTreeObserver);
         mRecyclerView = null;
-    }
-
-    private void onGlobalLayout() {
-        if (mEnableEmptyView) {
-            updateEmptyView();
-        }
     }
 
     private void updateEmptyView() {
