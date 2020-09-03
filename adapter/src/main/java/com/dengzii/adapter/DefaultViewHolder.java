@@ -23,11 +23,12 @@ public class DefaultViewHolder extends AbsViewHolder<Object> {
     @Override
     public void onCreate(@NonNull ViewGroup parent) {
         TextView textView = new TextView(getContext());
-        textView.setLayoutParams(getLayoutParam(FrameLayout.LayoutParams.MATCH_PARENT, 40));
+        textView.setLayoutParams(
+                new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, 100));
         textView.setText(getContext().getString(R.string.no_view_holder_for_item));
         textView.setGravity(Gravity.CENTER);
-        textView.setTextSize(18f);
-        textView.setTextColor(Color.rgb(0, 0, 0));
+        textView.setTextSize(16f);
+        textView.setTextColor(Color.rgb(255, 255, 255));
         textView.setBackgroundColor(Color.rgb(0xff, 0, 0));
         setContentView(textView);
     }
