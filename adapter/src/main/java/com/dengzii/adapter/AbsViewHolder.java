@@ -49,7 +49,7 @@ import java.util.List;
 @SuppressWarnings({"WeakerAccess", "unchecked", "unused"})
 public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
 
-    public static final FrameLayout.LayoutParams LAYOUT_MATCH_PARENT_VH = getLayoutParam(
+    public static final FrameLayout.LayoutParams LAYOUT_MATCH_PARENT_VH = new FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
 
     private View.OnClickListener mOnClickListener;
@@ -90,11 +90,18 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
      * @return The blank FrameLayout container
      */
     protected static ViewGroup getContainer(View parent, @RecyclerView.Orientation int orientation) {
+
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT);
+        FrameLayout frameLayout = new FrameLayout(parent.getContext());
         if (orientation == LinearLayout.VERTICAL) {
-            return getVerticalAdaptContainer(parent);
+            layoutParams.height = FrameLayout.LayoutParams.WRAP_CONTENT;
         } else {
-            return getHorizontalAdaptContainer(parent);
+            layoutParams.width = FrameLayout.LayoutParams.WRAP_CONTENT;
         }
+        frameLayout.setLayoutParams(layoutParams);
+        return frameLayout;
     }
 
     /**
@@ -135,6 +142,12 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
             addContent(LayoutInflater
                     .from(itemView.getContext())
                     .inflate(res, null, false));
+        }
+    }
+
+    protected void setLayoutParam(FrameLayout.LayoutParams layoutParam){
+        if (itemView instanceof FrameLayout){
+            itemView.setLayoutParams(layoutParam);
         }
     }
 
@@ -239,30 +252,6 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
         }
     }
 
-    private static ViewGroup getVerticalAdaptContainer(View parent) {
-
-        FrameLayout frameLayout = new FrameLayout(parent.getContext());
-        frameLayout.setLayoutParams(new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT));
-        return frameLayout;
-    }
-
-    private static ViewGroup getHorizontalAdaptContainer(View parent) {
-        FrameLayout frameLayout = new FrameLayout(parent.getContext());
-        frameLayout.setLayoutParams(new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.MATCH_PARENT));
-        return frameLayout;
-    }
-
-    protected static FrameLayout.LayoutParams getLayoutParamMatchParentVH() {
-        return new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT);
-    }
-
-    protected static FrameLayout.LayoutParams getLayoutParam(int width, int height) {
-        return new FrameLayout.LayoutParams(width, height);
-    }
-
     private static ViewGroup getAdaptContainer(View parent, FrameLayout.LayoutParams layoutParams) {
         FrameLayout frameLayout = new FrameLayout(parent.getContext());
         frameLayout.setLayoutParams(layoutParams);
@@ -276,11 +265,11 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
     static class ItemInfo {
         Object data;
         int position;
-        AbsViewHolder absViewHolder;
+        AbsViewHolder<?> absViewHolder;
         View source;
         Object other;
 
-        ItemInfo(Object data, int position, AbsViewHolder absViewHolder, View source, Object other) {
+        ItemInfo(Object data, int position, AbsViewHolder<?> absViewHolder, View source, Object other) {
             this.data = data;
             this.position = position;
             this.absViewHolder = absViewHolder;

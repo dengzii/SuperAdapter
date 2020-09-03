@@ -1,6 +1,5 @@
 package com.dengzii.adapter;
 
-import android.content.Context;
 import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,28 +18,30 @@ import java.util.List;
  * time   : 2019/07/09 10:09
  * desc   : none
  */
-@SuppressWarnings({"unused", "FieldCanBeLocal"})
+@SuppressWarnings({"unused"})
 public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     public static final Object HEADER = new Header();
     public static final Object FOOTER = new Footer();
     public static final Object EMPTY = new Empty();
 
-    private static final SparseArray<Class<? extends AbsViewHolder>>
+    private static final SparseArray<Class<? extends AbsViewHolder<?>>>
             DEFAULT_VIEW_HOLDER_FOR_TYPE = new SparseArray<>();
 
     private static final SparseArray<Class<?>> DEFAULT_DATA_TYPE = new SparseArray<>();
 
     private List<Object> mDataSet;
     private RecyclerView mRecyclerView = null;
-    private Context mContext;
-    private SparseArray<Class<? extends AbsViewHolder>> mItemViewHolderForType;
+    private SparseArray<Class<? extends AbsViewHolder<?>>> mItemViewHolderForType;
     private SparseArray<IViewHolderGenerator> mHolderGenerators;
     private SparseArray<Class<?>> mTypes;
     private OnItemClickListener mOnItemClickListener;
     private OnItemLongClickListener mOnItemLongClickListener;
+    private DataObserver mDataObserver = null;
     // add EMPTY item to data set when data set is empty.
+    private boolean mFirstTimeLoadData = true;
     private boolean mEnableEmptyView = false;
+    private boolean mEnableEmptyViewOnInit = true;
 
     private View.OnClickListener mItemClickListener = new View.OnClickListener() {
         @Override
@@ -73,7 +74,7 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         mTypes = new SparseArray<>();
     }
 
-    public static void addDefaultViewHolderForType(Class<?> type, Class<? extends AbsViewHolder> holder) {
+    public static void addDefaultViewHolderForType(Class<?> type, Class<? extends AbsViewHolder<?>> holder) {
         DEFAULT_VIEW_HOLDER_FOR_TYPE.put(type.hashCode(), holder);
         DEFAULT_DATA_TYPE.put(type.hashCode(), holder);
     }
@@ -90,11 +91,15 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         mEnableEmptyView = enableEmptyView;
     }
 
+    public void setEnableEmptyViewOnInit(boolean enableEmptyViewOnInit) {
+        mEnableEmptyViewOnInit = enableEmptyViewOnInit;
+    }
+
     @Override
     public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
         super.onViewRecycled(holder);
         if (holder instanceof AbsViewHolder) {
-            ((AbsViewHolder) holder).onRecycled();
+            ((AbsViewHolder<?>) holder).onRecycled();
         }
     }
 
@@ -106,7 +111,7 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         this.mOnItemClickListener = listener;
     }
 
-    public void addViewHolderForType(Class<?> type, Class<? extends AbsViewHolder> holder) {
+    public void addViewHolderForType(Class<?> type, Class<? extends AbsViewHolder<?>> holder) {
         mItemViewHolderForType.put(type.hashCode(), holder);
         mTypes.put(type.hashCode(), type);
     }
@@ -119,7 +124,7 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-        AbsViewHolder viewHolder = null;
+        AbsViewHolder<?> viewHolder = null;
         if (null != mHolderGenerators.get(i, null)) {
             viewHolder = mHolderGenerators.get(i).onCreateViewHolder(viewGroup);
         } else if (null != mItemViewHolderForType.get(i, null)) {
@@ -136,7 +141,7 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
         if (viewHolder instanceof AbsViewHolder) {
-            AbsViewHolder absViewHolder = ((AbsViewHolder) viewHolder);
+            AbsViewHolder<?> absViewHolder = ((AbsViewHolder<?>) viewHolder);
             Object data = mDataSet.get(position);
             absViewHolder.setOnClickListener(mItemClickListener);
             absViewHolder.setOnLongClickListener(mItemLongClickListener);
@@ -164,7 +169,9 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         @Override
         public void onGlobalLayout() {
             if (mEnableEmptyView) {
-                updateEmptyView();
+                if (mEnableEmptyViewOnInit || !mFirstTimeLoadData) {
+                    updateEmptyView();
+                }
             }
         }
     };
@@ -172,15 +179,32 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     @Override
     public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
         super.onAttachedToRecyclerView(recyclerView);
+        mFirstTimeLoadData = true;
         mRecyclerView = recyclerView;
+        if (mDataObserver == null){
+            mDataObserver = new DataObserver();
+        }
+        registerAdapterDataObserver(mDataObserver);
         mRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(mRecyclerViewTreeObserver);
     }
 
     @Override
     public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
         super.onDetachedFromRecyclerView(recyclerView);
+        mFirstTimeLoadData = true;
+        if (mDataObserver != null) {
+            unregisterAdapterDataObserver(mDataObserver);
+        }
         mRecyclerView.getViewTreeObserver().removeOnGlobalLayoutListener(mRecyclerViewTreeObserver);
         mRecyclerView = null;
+    }
+
+    private class DataObserver extends RecyclerView.AdapterDataObserver {
+        @Override
+        public void onChanged() {
+            super.onChanged();
+            mFirstTimeLoadData = false;
+        }
     }
 
     private void updateEmptyView() {
@@ -197,11 +221,11 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         }
     }
 
-    private AbsViewHolder getHolder(Class<? extends AbsViewHolder> clazz,
-                                    ViewGroup parent, int type) {
+    private AbsViewHolder<?> getHolder(Class<? extends AbsViewHolder<?>> clazz,
+                                       ViewGroup parent, int type) {
         Object result = null;
         try {
-            for (Constructor c : clazz.getDeclaredConstructors()) {
+            for (Constructor<?> c : clazz.getDeclaredConstructors()) {
                 c.setAccessible(true);
                 result = getViewHolder(c, parent);
                 if (result != null) {
@@ -214,15 +238,16 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                 );
             }
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
-        } catch (InvocationTargetException | InstantiationException e) {
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException(e);
+        } catch (InstantiationException e) {
             throw new RuntimeException(e);
         }
-        return (AbsViewHolder) result;
+        return (AbsViewHolder<?>) result;
     }
 
-    private Object getViewHolder(Constructor c, View parent)
+    private Object getViewHolder(Constructor<?> c, View parent)
             throws IllegalAccessException, InvocationTargetException, InstantiationException {
 
         int parameterCount = c.getParameterTypes().length;
@@ -257,6 +282,6 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
     public interface IViewHolderGenerator {
         @NonNull
-        AbsViewHolder onCreateViewHolder(ViewGroup parent);
+        AbsViewHolder<?> onCreateViewHolder(ViewGroup parent);
     }
 }
