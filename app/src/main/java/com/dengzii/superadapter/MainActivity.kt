@@ -9,6 +9,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.dengzii.adapter.SuperAdapter
 import com.dengzii.adapter.addViewHolderForType
+import com.dengzii.adapter.setFooter
+import com.dengzii.adapter.setHeader
 import com.example.superadapter.R
 import kotlinx.android.synthetic.main.activity_main.*
 
@@ -26,22 +28,21 @@ class MainActivity : AppCompatActivity() {
             EmptyViewHolder::class.java
         )
 
-//        data.addAll(
-//            mutableListOf(
-//                Header("Title", "subtitle subtitle."),
-//                Section("Section 0"),
-//                Item("Item 1", "content content content 1", R.mipmap.ic_launcher),
-//                Item("Item 2", "content content content 2", R.mipmap.ic_launcher_round),
-//                Item("Item 3", "content content content 3", R.mipmap.ic_launcher),
-//                Item("Item 4", "content content content 4", R.mipmap.ic_launcher_round),
-//                "This item is no view holder",
-//                Section("Section 1"),
-//                Item("Item 5", "content content content 5", R.mipmap.ic_launcher_round)
-//            )
-//        )
+        data.addAll(
+            mutableListOf(
+                Section("Section 0"),
+                Item("Item 1", "content content content 1", R.mipmap.ic_launcher),
+                Item("Item 2", "content content content 2", R.mipmap.ic_launcher_round),
+                Item("Item 3", "content content content 3", R.mipmap.ic_launcher),
+                Item("Item 4", "content content content 4", R.mipmap.ic_launcher_round),
+                "This item is no view holder",
+                Section("Section 1"),
+                Item("Item 5", "content content content 5", R.mipmap.ic_launcher_round)
+            )
+        )
 
-        adapter.setEnableEmptyViewOnInit(false)
-        adapter.setEnableEmptyView(true)
+        adapter.setEnableEmptyViewOnInit(true)
+        adapter.setEnableEmptyView(true, SuperAdapter.EMPTY)
         // 绑定数据类到 ViewHolder
         ktx()
 
@@ -49,7 +50,7 @@ class MainActivity : AppCompatActivity() {
             // do something
             if (itemData == SuperAdapter.EMPTY) {
                 data.add(0, Item("Item 1", "content content content 1", R.mipmap.ic_launcher))
-                adapter.notifyItemInserted(0)
+                adapter.notifyDataSetChanged()
                 return@setOnItemClickListener
             }
             Toast.makeText(this, itemData.toString(), Toast.LENGTH_SHORT).show()
@@ -71,6 +72,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun ktx() {
 
+        adapter.setHeader("This is header", R.layout.item_header) {
+            onBindData { data, _ ->
+                findView<TextView>(R.id.tv_title).text = data
+            }
+        }
+        adapter.setFooter(listOf("This", "is", "footer"), R.layout.item_section) {
+            onBindData { data, _ ->
+                findView<TextView>(R.id.tv_title).text = data.joinToString(" ")
+            }
+        }
         adapter.addViewHolderForType<Header>(R.layout.item_header) {
             val title = findView<TextView>(R.id.tv_title)
             val content by lazyFindView<TextView>(R.id.tv_content)
@@ -98,6 +109,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
     data class Header(
         var title: String,
         var content: String

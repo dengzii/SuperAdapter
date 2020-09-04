@@ -6,10 +6,12 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -21,8 +23,6 @@ import java.util.List;
 @SuppressWarnings({"unused"})
 public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    public static final Object HEADER = new Header();
-    public static final Object FOOTER = new Footer();
     public static final Object EMPTY = new Empty();
 
     private static final SparseArray<Class<? extends AbsViewHolder<?>>>
@@ -30,15 +30,21 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
     private static final SparseArray<Class<?>> DEFAULT_DATA_TYPE = new SparseArray<>();
 
-    private List<Object> mDataSet;
+    private DataObserver mDataObserver = null;
     private RecyclerView mRecyclerView = null;
+    private List<Object> mDataSet;
+
+    private Object mHeader = null;
+    private Object mFooter = null;
+
     private SparseArray<Class<? extends AbsViewHolder<?>>> mItemViewHolderForType;
-    private SparseArray<IViewHolderGenerator> mHolderGenerators;
-    private SparseArray<Class<?>> mTypes;
+    private SparseArray<IViewHolderGenerator<?>> mHolderGenerators;
     private OnItemClickListener mOnItemClickListener;
     private OnItemLongClickListener mOnItemLongClickListener;
-    private DataObserver mDataObserver = null;
-    // add EMPTY item to data set when data set is empty.
+    /**
+     * The item data add to data set when data is empty and empty view is enabled.
+     */
+    private Object mEmptyData = EMPTY;
     private boolean mFirstTimeLoadData = true;
     private boolean mEnableEmptyView = false;
     private boolean mEnableEmptyViewOnInit = true;
@@ -71,7 +77,6 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         mDataSet = (List<Object>) data;
         mItemViewHolderForType = new SparseArray<>();
         mHolderGenerators = new SparseArray<>();
-        mTypes = new SparseArray<>();
     }
 
     public static void addDefaultViewHolderForType(Class<?> type, Class<? extends AbsViewHolder<?>> holder) {
@@ -87,20 +92,25 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         mDataSet.addAll(data);
     }
 
-    public void setEnableEmptyView(boolean enableEmptyView) {
+    /**
+     * Set Whether show `No Data` view when data set is empty, when the data changes and is detected
+     * to be empty, the emptyData will add to data set and notify adapter rebinding ViewHolder.
+     *
+     * @param enableEmptyView True expressed enable, otherwise not.
+     * @param emptyData       The item data use for `No Data`'s ViewHolder.
+     */
+    public void setEnableEmptyView(boolean enableEmptyView, Object emptyData) {
         mEnableEmptyView = enableEmptyView;
+        mEmptyData = emptyData;
     }
 
+    /**
+     * Set whether show `No Data` view before first time call adapter's `notifyXxx` method.
+     *
+     * @param enableEmptyViewOnInit True will show before `notifyChange`.
+     */
     public void setEnableEmptyViewOnInit(boolean enableEmptyViewOnInit) {
         mEnableEmptyViewOnInit = enableEmptyViewOnInit;
-    }
-
-    @Override
-    public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
-        super.onViewRecycled(holder);
-        if (holder instanceof AbsViewHolder) {
-            ((AbsViewHolder<?>) holder).onRecycled();
-        }
     }
 
     public void setOnItemLongClickListener(OnItemLongClickListener longClickListener) {
@@ -111,14 +121,45 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         this.mOnItemClickListener = listener;
     }
 
-    public void addViewHolderForType(Class<?> type, Class<? extends AbsViewHolder<?>> holder) {
+    /**
+     * Specify AbsViewHolder class for item data type.
+     *
+     * @param type   The type of item.
+     * @param holder The ViewHolder extends AbsViewHolder for create view and binding data.
+     */
+    public <T> void addViewHolderForType(Class<T> type, Class<? extends AbsViewHolder<T>> holder) {
         mItemViewHolderForType.put(type.hashCode(), holder);
-        mTypes.put(type.hashCode(), type);
     }
 
-    public void addViewHolderGenerator(Class<?> type, IViewHolderGenerator generator) {
+    public <T> void addViewHolderGenerator(Class<T> type, IViewHolderGenerator<T> generator) {
         mHolderGenerators.put(type.hashCode(), generator);
-        mTypes.put(type.hashCode(), type);
+    }
+
+    /**
+     * Add a header or footer item for the list, if your want remove header or footer, pass parameter
+     * `generator` a null value.
+     *
+     * @param header    True expressed set header, otherwise footer.
+     * @param data      The data need be bind to item.
+     * @param generator The interface use for generate ViewHolder.
+     */
+    public <T> void setHeaderOrFooter(boolean header, @NonNull T data,
+                                      @Nullable IViewHolderGenerator<T> generator) {
+        if (generator == null) {
+            mHolderGenerators.remove(data.getClass().hashCode());
+            if (header) {
+                mHeader = null;
+            } else {
+                mFooter = null;
+            }
+            return;
+        }
+        mHolderGenerators.put(data.getClass().hashCode(), generator);
+        if (header) {
+            mHeader = data;
+        } else {
+            mFooter = data;
+        }
     }
 
     @NonNull
@@ -142,7 +183,16 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
         if (viewHolder instanceof AbsViewHolder) {
             AbsViewHolder<?> absViewHolder = ((AbsViewHolder<?>) viewHolder);
-            Object data = mDataSet.get(position);
+            Object data;
+            int itemType = getItemViewType(position);
+            if (mHeader != null && position == 0) {
+                data = mHeader;
+            } else if (mFooter != null && itemType == mFooter.getClass().hashCode()) {
+                data = mFooter;
+            } else {
+                int offset = mHeader != null ? 1 : 0;
+                data = mDataSet.get(position - offset);
+            }
             absViewHolder.setOnClickListener(mItemClickListener);
             absViewHolder.setOnLongClickListener(mItemLongClickListener);
             absViewHolder.onBindViewHolder(this, mDataSet, data, position);
@@ -150,13 +200,41 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     }
 
     @Override
-    public int getItemViewType(int position) {
-        return mDataSet.get(position).getClass().hashCode();
+    public int getItemCount() {
+        int size = mDataSet.size();
+        if (mHeader != null) {
+            size++;
+        }
+        if (mFooter != null) {
+            size++;
+        }
+        return size;
+    }
+
+
+    @Override
+    public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
+        super.onViewRecycled(holder);
+        if (holder instanceof AbsViewHolder) {
+            ((AbsViewHolder<?>) holder).onRecycled();
+        }
     }
 
     @Override
-    public int getItemCount() {
-        return mDataSet.size();
+    public int getItemViewType(int position) {
+        int offset = 0;
+        if (mHeader != null) {
+            offset++;
+            if (position == 0) {
+                return mHeader.getClass().hashCode();
+            }
+        }
+        if (mFooter != null) {
+            if (position == offset + mDataSet.size()) {
+                return mFooter.getClass().hashCode();
+            }
+        }
+        return mDataSet.get(position - offset).getClass().hashCode();
     }
 
     @Override
@@ -168,7 +246,7 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             mRecyclerViewTreeObserver = new ViewTreeObserver.OnGlobalLayoutListener() {
         @Override
         public void onGlobalLayout() {
-            if (mEnableEmptyView) {
+            if (mEnableEmptyView && mEmptyData != null) {
                 if (mEnableEmptyViewOnInit || !mFirstTimeLoadData) {
                     updateEmptyView();
                 }
@@ -181,7 +259,7 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         super.onAttachedToRecyclerView(recyclerView);
         mFirstTimeLoadData = true;
         mRecyclerView = recyclerView;
-        if (mDataObserver == null){
+        if (mDataObserver == null) {
             mDataObserver = new DataObserver();
         }
         registerAdapterDataObserver(mDataObserver);
@@ -209,14 +287,14 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
     private void updateEmptyView() {
         if (mDataSet.isEmpty()) {
-            mDataSet.add(EMPTY);
+            mDataSet.add(mEmptyData);
             super.notifyDataSetChanged();
         }
         if (!mDataSet.isEmpty() && mDataSet.size() > 1) {
-            int indexOfEmpty = mDataSet.indexOf(EMPTY);
+            int indexOfEmpty = mDataSet.indexOf(mEmptyData);
             if (indexOfEmpty >= 0) {
                 mDataSet.remove(indexOfEmpty);
-                super.notifyItemRemoved(indexOfEmpty);
+                super.notifyDataSetChanged();
             }
         }
     }
@@ -263,13 +341,7 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         return null;
     }
 
-    private static final class Header {
-    }
-
-    private static final class Footer {
-    }
-
-    private static final class Empty {
+    public static final class Empty {
     }
 
     public interface OnItemClickListener {
@@ -280,8 +352,8 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         boolean onItemClick(View source, Object itemData, int position);
     }
 
-    public interface IViewHolderGenerator {
+    public interface IViewHolderGenerator<T> {
         @NonNull
-        AbsViewHolder<?> onCreateViewHolder(ViewGroup parent);
+        AbsViewHolder<T> onCreateViewHolder(ViewGroup parent);
     }
 }
