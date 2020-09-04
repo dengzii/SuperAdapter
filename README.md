@@ -26,57 +26,57 @@ implementation "com.dengzii.adapter:$latestVersion"
 通过 lambda 快速使用
 
 ```kotlin
-        adapter.setEnableEmptyView(true, SuperAdapter.Empty())
-        adapter.addViewHolderForType<SuperAdapter.Empty>(R.layout.item_empty){
-            onBindData { _, _ -> 
-                findView<View>(R.id.bt_refresh).setOnClickListener { 
-                    // refresh your data
-                }
-            }
+adapter.setEnableEmptyView(true, SuperAdapter.Empty())
+adapter.addViewHolderForType<SuperAdapter.Empty>(R.layout.item_empty){
+    onBindData { _, _ -> 
+        findView<View>(R.id.bt_refresh).setOnClickListener { 
+            // refresh your data
         }
-        adapter.setHeader("This is header", R.layout.item_header) {
-            onBindData { data, _ ->
-                findView<TextView>(R.id.tv_title).text = data
-            }
-        }
-        adapter.setFooter(listOf("This", "is", "footer"), R.layout.item_section) {
-            onBindData { data, _ ->
-                findView<TextView>(R.id.tv_title).text = data.joinToString(" ")
-            }
-        }
-        adapter.addViewHolderForType<Header>(R.layout.item_header) {
-            val title = findView<TextView>(R.id.tv_title)
-            val content by lazyFindView<TextView>(R.id.tv_content)
-            onBindData { data, _ ->
-                title.text = data.title
-                content.text = data.content
-            }
-        }
-```
+    }
+}
+adapter.setHeader("This is header", R.layout.item_header) {
+    onBindData { data, _ ->
+        findView<TextView>(R.id.tv_title).text = data
+    }
+}
+adapter.setFooter(listOf("This", "is", "footer"), R.layout.item_section) {
+    onBindData { data, _ ->
+        findView<TextView>(R.id.tv_title).text = data.joinToString(" ")
+    }
+}
+adapter.addViewHolderForType<Header>(R.layout.item_header) {
+    val title = findView<TextView>(R.id.tv_title)
+    val content by lazyFindView<TextView>(R.id.tv_content)
+    onBindData { data, _ ->
+        title.text = data.title
+        content.text = data.content
+    }
+}
+
 
 或者不使用 lambda
 
 ```kotlin
-    val adapter = SuperAdapter(listOf("Item 1", "Item 2", "Item 3"))
-    adapter.addViewHolderForType(String::class.java, ItemViewHolder::class.java)
-    recyclerView.layoutManager = LinearLayoutManager(this)
-    recyclerView.adapter = adapter
-    
-    class ItemViewHolder(parent: ViewGroup) : AbsViewHolder<String>(parent) {
-        private lateinit var mTextView:TextView 
-        override fun onCreate(parent: ViewGroup) {
-            mTextView = TextView(context)
-            mTextView.layoutParams = getLayoutParam(
-                            ViewGroup.LayoutParams.WRAP_CONTENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT
-                    )
-            setContentView(mTextView)
-        }
-    
-        override fun onBindData(data: String, position: Int) {
-            mTextView.text = data
-        }
+val adapter = SuperAdapter(listOf("Item 1", "Item 2", "Item 3"))
+adapter.addViewHolderForType(String::class.java, ItemViewHolder::class.java)
+recyclerView.layoutManager = LinearLayoutManager(this)
+recyclerView.adapter = adapter
+
+class ItemViewHolder(parent: ViewGroup) : AbsViewHolder<String>(parent) {
+    private lateinit var mTextView:TextView 
+    override fun onCreate(parent: ViewGroup) {
+        mTextView = TextView(context)
+        mTextView.layoutParams = getLayoutParam(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+        setContentView(mTextView)
     }
+
+    override fun onBindData(data: String, position: Int) {
+        mTextView.text = data
+    }
+}
 ```
 无需继承 SuperAdapter, 但需要为每种 Item 实现并继承继承抽象类 AbsViewHolder<T>, 并在改类中设置布局和绑定 View, 数据.
 
