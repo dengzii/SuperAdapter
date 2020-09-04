@@ -1,23 +1,60 @@
 ## SuperAdapter
-[ ![Download](https://api.bintray.com/packages/dengzi/maven/superadapter/images/download.svg) ](https://bintray.com/dengzi/maven/superadapter/_latestVersion)
+[![#](https://badgen.net/badge/icon/awesome?icon=awesome&label)](#)
+[![download](https://api.bintray.com/packages/dengzi/maven/superadapter/images/download.svg) ](https://bintray.com/dengzi/maven/superadapter/_latestVersion) 
+[![#](https://badgen.net/github/release/dengzii/superadapter)](#)
+[![#](https://badgen.net/github/last-commit/dengzii/superadapter)](#)
+[![#](https://badgen.net/github/license/dengzii/superadapter)](#)
 
-以不常见的角度实现 RecyclerView 适配器
+简单, 快捷, 好用的 RecyclerView 适配器.
 
-关键类
+**功能**
 
-[AbsViewHolder](https://github.com/dengzii/SuperAdapter/blob/master/adapter/src/main/java/com/dengzii/adapter/AbsViewHolder.java)
-
-[SuperAdapter](https://github.com/dengzii/SuperAdapter/blob/master/adapter/src/main/java/com/dengzii/adapter/SuperAdapter.java)
+- 无需继承 Adapter, 无需通过 position 判断 item 类型.
+- 支持页头和页脚.
+- 支持自动展示空数据界面.
+- 通过 Kotlin 的 lambda 大量缩减代码.
 
 ## Usage
 
-添加依赖
+添加依赖 
+[![download](https://api.bintray.com/packages/dengzi/maven/superadapter/images/download.svg) ]
 
 ```
 implementation "com.dengzii.adapter:$latestVersion"
 ```
 
-使用 Adapter
+通过 lambda 快速使用
+
+```kotlin
+        adapter.setEnableEmptyView(true, SuperAdapter.Empty())
+        adapter.addViewHolderForType<SuperAdapter.Empty>(R.layout.item_empty){
+            onBindData { _, _ -> 
+                findView<View>(R.id.bt_refresh).setOnClickListener { 
+                    // refresh your data
+                }
+            }
+        }
+        adapter.setHeader("This is header", R.layout.item_header) {
+            onBindData { data, _ ->
+                findView<TextView>(R.id.tv_title).text = data
+            }
+        }
+        adapter.setFooter(listOf("This", "is", "footer"), R.layout.item_section) {
+            onBindData { data, _ ->
+                findView<TextView>(R.id.tv_title).text = data.joinToString(" ")
+            }
+        }
+        adapter.addViewHolderForType<Header>(R.layout.item_header) {
+            val title = findView<TextView>(R.id.tv_title)
+            val content by lazyFindView<TextView>(R.id.tv_content)
+            onBindData { data, _ ->
+                title.text = data.title
+                content.text = data.content
+            }
+        }
+```
+
+或者不使用 lambda
 
 ```kotlin
     val adapter = SuperAdapter(listOf("Item 1", "Item 2", "Item 3"))
