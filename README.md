@@ -52,6 +52,7 @@ adapter.addViewHolderForType<Header>(R.layout.item_header) {
         content.text = data.content
     }
 }
+```
 
 
 或者不使用 lambda
