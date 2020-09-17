@@ -8,11 +8,19 @@ class AbsViewHolderBuilder<T>(
     private val viewHolder: AbsViewHolder<T>
 ) {
 
+    val itemView: View get() = viewHolder.itemView
+    val layoutPosition: Int get() = viewHolder.layoutPosition
+    val adapterPosition: Int get() = viewHolder.adapterPosition
+    var isRecyclable: Boolean
+        get() = viewHolder.isRecyclable
+        set(value) {
+            viewHolder.setIsRecyclable(value)
+        }
+
     var onBindData: ((data: T, position: Int) -> Unit)? = null
         private set
 
     fun onBindData(action: (data: T, position: Int) -> Unit) {
-        println("-----")
         this.onBindData = action
     }
 
