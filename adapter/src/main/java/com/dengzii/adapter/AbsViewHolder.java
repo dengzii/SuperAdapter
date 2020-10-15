@@ -11,6 +11,7 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.IdRes;
 import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -120,6 +121,10 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
      */
     public abstract void onBindData(@NonNull T data, int position);
 
+    public void onBindData(@NonNull T data, int position, List<Object> payloads) {
+
+    }
+
     /**
      * 从当前 item 中查找指定 id 的 View
      *
@@ -145,8 +150,8 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
         }
     }
 
-    protected void setLayoutParam(FrameLayout.LayoutParams layoutParam){
-        if (itemView instanceof FrameLayout){
+    protected void setLayoutParam(FrameLayout.LayoutParams layoutParam) {
+        if (itemView instanceof FrameLayout) {
             itemView.setLayoutParams(layoutParam);
         }
     }
@@ -166,6 +171,11 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
     @CallSuper
     protected void onRecycled() {
 
+    }
+
+    @Nullable
+    protected Object diff(Object other) {
+        return null;
     }
 
     protected Context getContext() {
@@ -234,12 +244,17 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
      * @param data     The data of item
      * @param position The position of item
      */
-    void onBindViewHolder(SuperAdapter adapter, List<Object> dataSet, Object data, int position) {
+    void onBindViewHolder(SuperAdapter adapter, List<Object> dataSet, Object data, int position,
+                          @Nullable List<Object> payloads) {
 
         mData = (T) data;
         mDataSet = dataSet;
         mAdapter = adapter;
-        onBindData((T) data, position);
+        if (payloads != null) {
+            onBindData((T) data, position, payloads);
+        } else {
+            onBindData((T) data, position);
+        }
     }
 
     private ItemInfo getItemInfo(View source, Object other) {

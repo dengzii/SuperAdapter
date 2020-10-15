@@ -7,6 +7,7 @@ import android.view.ViewTreeObserver;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.lang.reflect.Constructor;
@@ -27,8 +28,6 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
     private static final SparseArray<Class<? extends AbsViewHolder<?>>>
             DEFAULT_VIEW_HOLDER_FOR_TYPE = new SparseArray<>();
-
-    private static final SparseArray<Class<?>> DEFAULT_DATA_TYPE = new SparseArray<>();
 
     private DataObserver mDataObserver = null;
     private RecyclerView mRecyclerView = null;
@@ -79,15 +78,27 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         mHolderGenerators = new SparseArray<>();
     }
 
-    public static void addDefaultViewHolderForType(Class<?> type, Class<? extends AbsViewHolder<?>> holder) {
-        DEFAULT_VIEW_HOLDER_FOR_TYPE.put(type.hashCode(), holder);
-        DEFAULT_DATA_TYPE.put(type.hashCode(), holder);
+    public void update(List<?> newData) {
+        if (mRecyclerView == null) {
+            throw new IllegalStateException("The adapter does not attach to recyclerview.");
+        }
+        SuperDiffHelper helper = new SuperDiffHelper(this);
+        DiffUtil.DiffResult diffResult = helper.update(mDataSet, newData);
+        mDataSet.clear();
+        mDataSet.addAll(newData);
+        diffResult.dispatchUpdatesTo(this);
     }
 
+    public static void addDefaultViewHolderForType(Class<?> type, Class<? extends AbsViewHolder<?>> holder) {
+        DEFAULT_VIEW_HOLDER_FOR_TYPE.put(type.hashCode(), holder);
+    }
+
+    @Deprecated
     public void setItemData(List<Object> data) {
         mDataSet = data;
     }
 
+    @Deprecated
     public void addItemData(List<Object> data) {
         mDataSet.addAll(data);
     }
@@ -99,7 +110,7 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
      * @param enableEmptyView True expressed enable, otherwise not.
      * @param emptyData       The item data use for `No Data`'s ViewHolder.
      */
-    public void setEnableEmptyView(boolean enableEmptyView, Object emptyData) {
+    public void setEnableEmptyView(boolean enableEmptyView, @Nullable Object emptyData) {
         mEnableEmptyView = enableEmptyView;
         mEmptyData = emptyData;
     }
@@ -181,22 +192,14 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
-        if (viewHolder instanceof AbsViewHolder) {
-            AbsViewHolder<?> absViewHolder = ((AbsViewHolder<?>) viewHolder);
-            Object data;
-            int itemType = getItemViewType(position);
-            if (mHeader != null && position == 0) {
-                data = mHeader;
-            } else if (mFooter != null && itemType == mFooter.getClass().hashCode()) {
-                data = mFooter;
-            } else {
-                int offset = mHeader != null ? 1 : 0;
-                data = mDataSet.get(position - offset);
-            }
-            absViewHolder.setOnClickListener(mItemClickListener);
-            absViewHolder.setOnLongClickListener(mItemLongClickListener);
-            absViewHolder.onBindViewHolder(this, mDataSet, data, position);
-        }
+        bindViewHolder(viewHolder, position, null);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position,
+                                 @NonNull List<Object> payloads) {
+        super.onBindViewHolder(holder, position, payloads);
+        bindViewHolder(holder, position, payloads);
     }
 
     @Override
@@ -277,12 +280,42 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         mRecyclerView = null;
     }
 
+    @Nullable
+    RecyclerView.ViewHolder getViewHolderFor(Object object) {
+        return mRecyclerView.getRecycledViewPool().getRecycledView(object.hashCode());
+    }
+
     private class DataObserver extends RecyclerView.AdapterDataObserver {
         @Override
         public void onChanged() {
             super.onChanged();
             mFirstTimeLoadData = false;
         }
+    }
+
+    private void bindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position,
+                                @Nullable List<Object> payloads) {
+        if (viewHolder instanceof AbsViewHolder) {
+            AbsViewHolder<?> absViewHolder = ((AbsViewHolder<?>) viewHolder);
+            Object data = getItemData(position);
+            absViewHolder.setOnClickListener(mItemClickListener);
+            absViewHolder.setOnLongClickListener(mItemLongClickListener);
+            absViewHolder.onBindViewHolder(this, mDataSet, data, position, payloads);
+        }
+    }
+
+    private Object getItemData(int position) {
+        Object data;
+        int itemType = getItemViewType(position);
+        if (mHeader != null && position == 0) {
+            data = mHeader;
+        } else if (mFooter != null && itemType == mFooter.getClass().hashCode()) {
+            data = mFooter;
+        } else {
+            int offset = mHeader != null ? 1 : 0;
+            data = mDataSet.get(position - offset);
+        }
+        return data;
     }
 
     private void updateEmptyView() {

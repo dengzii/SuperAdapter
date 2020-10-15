@@ -93,11 +93,9 @@ inline fun <reified T> buildAbsViewHolder(
                 return@apply
             }
             action(builder, this)
-            println("<top>.onCreate")
         }
 
         override fun onBindData(data: T, position: Int) {
-            println("<top>.onBindData")
             builder.onBindData?.invoke(data, position)
         }
     }
