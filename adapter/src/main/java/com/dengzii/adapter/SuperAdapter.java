@@ -69,10 +69,11 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             new ViewTreeObserver.OnGlobalLayoutListener() {
                 @Override
                 public void onGlobalLayout() {
-                    if (mEnableEmptyView && mEmptyData != null) {
-                        if (mEnableEmptyViewOnInit || !mFirstTimeLoadData) {
-                            updateEmptyView();
-                        }
+                    if (mEnableEmptyView
+                            && mEmptyData != null
+                            && mEnableEmptyViewOnInit || !mFirstTimeLoadData
+                    ) {
+                        updateEmptyView();
                     }
                 }
             };
@@ -105,7 +106,7 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             mDataSet.addAll(newData);
             return;
         }
-        if (newData == mDataSet) {
+        if (newData.equals(mDataSet)) {
             throw new IllegalArgumentException("The object new data set is equals to the old data set.");
         }
         SuperDiffHelper helper = new SuperDiffHelper(this);
@@ -254,7 +255,8 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             }
         }
         if (mFooter != null) {
-            if (position == offset + mDataSet.size()) {
+            boolean isFooter = position == offset + mDataSet.size();
+            if (isFooter) {
                 return mFooter.getClass().hashCode();
             }
         }
@@ -352,16 +354,16 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                 }
             }
             if (result == null) {
-                throw new RuntimeException(
+                throw new CreateViewHolderException(
                         "No suitable constructor find with ViewHolder " + clazz.getName()
                 );
             }
         } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw new CreateViewHolderException(e);
         } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
+            throw new CreateViewHolderException(e);
         } catch (InstantiationException e) {
-            throw new RuntimeException(e);
+            throw new CreateViewHolderException(e);
         }
         return (AbsViewHolder<?>) result;
     }

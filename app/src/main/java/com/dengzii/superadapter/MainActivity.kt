@@ -28,13 +28,13 @@ class MainActivity : AppCompatActivity() {
 
         data.addAll(
             mutableListOf(
-//                Section("Section 0"),
+                Section("Section 0"),
                 Item("Item 1", "content content content 1", R.mipmap.ic_launcher),
                 Item("Item 2", "content content content 2", R.mipmap.ic_launcher_round),
                 Item("Item 3", "content content content 3", R.mipmap.ic_launcher),
                 Item("Item 4", "content content content 4", R.mipmap.ic_launcher_round),
-//                "This item is no view holder",
-//                Section("Section 1"),
+                "This item is no view holder",
+                Section("Section 1"),
                 Item("Item 5", "content content content 5", R.mipmap.ic_launcher_round)
             )
         )
@@ -42,13 +42,13 @@ class MainActivity : AppCompatActivity() {
         adapter.setEnableEmptyViewOnInit(true)
         adapter.setEnableEmptyView(true, SuperAdapter.EMPTY)
         // 绑定数据类到 ViewHolder
-//        ktx()
-        bindViewHolder()
+        ktx()
+//        bindViewHolder()
 
         adapter.setOnItemClickListener { _, itemData, _, _ ->
             // do something
             if (itemData == SuperAdapter.EMPTY) {
-                data.add(0, Item("Item 1", "content content content 1", R.mipmap.ic_launcher))
+                data.add(0, Item("Item", "content content content", R.mipmap.ic_launcher))
                 adapter.notifyDataSetChanged()
                 return@setOnItemClickListener
             }
@@ -60,7 +60,7 @@ class MainActivity : AppCompatActivity() {
             adapter.notifyDataSetChanged()
         }
         bt_add.setOnClickListener {
-            data.add(Item("Item 1", "content content content 1", R.mipmap.ic_launcher))
+            data.add(Item("Item added", "content content content added", R.mipmap.ic_launcher))
             adapter.notifyDataSetChanged()
         }
         bt_update.setOnClickListener {
@@ -116,10 +116,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun bindViewHolder() {
-
         adapter.addViewHolderForType(Item::class.java, ItemViewHolder::class.java)
     }
 
+    /**
+     *
+     */
     class ItemViewHolder(parent: ViewGroup) : AbsViewHolder<Item>(parent) {
 
         val title: TextView by lazy { findViewById<TextView>(R.id.tv_title) }
@@ -145,11 +147,17 @@ class MainActivity : AppCompatActivity() {
 //        }
     }
 
+    /**
+     *
+     */
     data class Header(
         var title: String,
         var content: String
     )
 
+    /**
+     *
+     */
     data class Item(
         var title: String,
         var content: String,
@@ -160,6 +168,9 @@ class MainActivity : AppCompatActivity() {
 //        }
     }
 
+    /**
+     *
+     */
     data class Section(
         var title: String
     )

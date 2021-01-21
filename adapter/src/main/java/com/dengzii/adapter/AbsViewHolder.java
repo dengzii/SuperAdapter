@@ -67,12 +67,24 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
         this(parent, LinearLayoutManager.VERTICAL);
     }
 
+    /**
+     * Create instance with orientation.
+     *
+     * @param parent      The parent view of item.
+     * @param orientation The orientation of RecyclerView.
+     */
     public AbsViewHolder(@NonNull ViewGroup parent, @RecyclerView.Orientation int orientation) {
         super(getContainer(parent, orientation));
         this.mParent = parent;
         onCreate((ViewGroup) itemView);
     }
 
+    /**
+     * Create instance with LayoutParam.
+     *
+     * @param parent       The parent view of item.
+     * @param layoutParams The layout parameter of the ViewHolder's container view.
+     */
     public AbsViewHolder(@NonNull ViewGroup parent, FrameLayout.LayoutParams layoutParams) {
         super(getAdaptContainer(parent, layoutParams));
         this.mParent = parent;
@@ -101,6 +113,13 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
         return frameLayout;
     }
 
+    /**
+     * Create root container for ViewHolder.
+     *
+     * @param parent       The parent view.
+     * @param layoutParams The LayoutPram.
+     * @return The container created.
+     */
     private static ViewGroup getAdaptContainer(View parent, FrameLayout.LayoutParams layoutParams) {
         FrameLayout frameLayout = new FrameLayout(parent.getContext());
         frameLayout.setLayoutParams(layoutParams);
@@ -157,24 +176,43 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
         }
     }
 
+    /**
+     * Change the root container view's (FrameLayout) LayoutParam.
+     *
+     * @param layoutParam The new LayoutParam set to root container.
+     */
     protected void setLayoutParam(FrameLayout.LayoutParams layoutParam) {
         if (itemView instanceof FrameLayout) {
             itemView.setLayoutParams(layoutParam);
         }
     }
 
+    /**
+     * Attach content view to ViewHolder.
+     *
+     * @param content The content view.
+     */
     protected void setContentView(View content) {
         addContent(content);
     }
 
+    /**
+     * Return the Adapter of ViewHolder.
+     */
     protected SuperAdapter getAdapter() {
         return mAdapter;
     }
 
+    /**
+     * Return the data set of Adapter.
+     */
     protected List<Object> getDataSet() {
         return mDataSet;
     }
 
+    /**
+     * Called when the ViewHolder is recycled, do something about resource release.
+     */
     @CallSuper
     protected void onRecycled() {
 
@@ -193,6 +231,11 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
     }
 
 
+    /**
+     * Cast type to {@link T}
+     *
+     * @see #getItemDataId(int, Object)
+     */
     long getItemDataIdInternal(int position, Object data) {
         return getItemDataId(position, ((T) data));
     }
@@ -209,6 +252,9 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
         return null;
     }
 
+    /**
+     * Return the context.
+     */
     protected Context getContext() {
         return mParent.getContext();
     }
@@ -265,6 +311,11 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
         this.mOnClickListener = onClickListener;
     }
 
+    /**
+     * Set item long click listener.
+     *
+     * @param onLongClickListener The LongClickListener.
+     */
     void setOnLongClickListener(View.OnLongClickListener onLongClickListener) {
         this.mOnLongClickListener = onLongClickListener;
     }
@@ -288,10 +339,22 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
         }
     }
 
+    /**
+     * Return the instance of data class ItemInfo about ViewHolder info.
+     *
+     * @param source The source view which is triggered event.
+     * @param other  The additional data.
+     * @return The ItemInfo.
+     */
     private ItemInfo getItemInfo(View source, Object other) {
         return new ItemInfo(mData, getAdapterPosition(), this, source, other);
     }
 
+    /**
+     * Add view to ViewHolder container.
+     *
+     * @param view The additional view.
+     */
     private void addContent(View view) {
         if (view != null && itemView instanceof ViewGroup) {
             ((ViewGroup) itemView).addView(view);
