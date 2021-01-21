@@ -12,7 +12,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -25,30 +24,19 @@ import java.util.List;
 public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     public static final Object EMPTY = new Empty();
-
     private static final SparseArray<Class<? extends AbsViewHolder<?>>>
             DEFAULT_VIEW_HOLDER_FOR_TYPE = new SparseArray<>();
 
+    private final SparseArray<Class<? extends AbsViewHolder<?>>> mItemViewHolderForType;
+    private final SparseArray<IViewHolderGenerator<?>> mHolderGenerators;
     private DataObserver mDataObserver = null;
     private RecyclerView mRecyclerView = null;
     private List<Object> mDataSet;
-
     private Object mHeader = null;
     private Object mFooter = null;
-
-    private SparseArray<Class<? extends AbsViewHolder<?>>> mItemViewHolderForType;
-    private SparseArray<IViewHolderGenerator<?>> mHolderGenerators;
     private OnItemClickListener mOnItemClickListener;
-    private OnItemLongClickListener mOnItemLongClickListener;
-    /**
-     * The item data add to data set when data is empty and empty view is enabled.
-     */
-    private Object mEmptyData = EMPTY;
-    private boolean mFirstTimeLoadData = true;
-    private boolean mEnableEmptyView = false;
-    private boolean mEnableEmptyViewOnInit = true;
 
-    private View.OnClickListener mItemClickListener = new View.OnClickListener() {
+    private final View.OnClickListener mItemClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             if (mOnItemClickListener != null && v.getTag() != null) {
@@ -58,8 +46,8 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             }
         }
     };
-
-    private View.OnLongClickListener mItemLongClickListener = new View.OnLongClickListener() {
+    private OnItemLongClickListener mOnItemLongClickListener;
+    private final View.OnLongClickListener mItemLongClickListener = new View.OnLongClickListener() {
         @Override
         public boolean onLongClick(View v) {
             if (mOnItemLongClickListener != null && v.getTag() != null) {
@@ -70,6 +58,24 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             return false;
         }
     };
+    /**
+     * The item data add to data set when data is empty and empty view is enabled.
+     */
+    private Object mEmptyData = EMPTY;
+    private boolean mFirstTimeLoadData = true;
+    private boolean mEnableEmptyView = false;
+    private boolean mEnableEmptyViewOnInit = true;
+    private final ViewTreeObserver.OnGlobalLayoutListener mRecyclerViewTreeObserver =
+            new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    if (mEnableEmptyView && mEmptyData != null) {
+                        if (mEnableEmptyViewOnInit || !mFirstTimeLoadData) {
+                            updateEmptyView();
+                        }
+                    }
+                }
+            };
 
     public SuperAdapter(List<?> data) {
         //noinspection unchecked
@@ -78,19 +84,35 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         mHolderGenerators = new SparseArray<>();
     }
 
-    public void update(List<?> newData) {
+    public static void addDefaultViewHolderForType(Class<?> type, Class<? extends AbsViewHolder<?>> holder) {
+        DEFAULT_VIEW_HOLDER_FOR_TYPE.put(type.hashCode(), holder);
+    }
+
+    /**
+     * Update adapter data set, refresh adapter items with {@link DiffUtil}.
+     * The ViewHolder must override {@link AbsViewHolder#getChangePayloads(Object, Object)} to make item data
+     * comparable, to compare the item data content (NOT object), the item data best override the
+     * method <code>equals</code>.
+     *
+     * @param newData The new data set.
+     * @throws IllegalArgumentException Throw when the object <code>newData</code> is equals to
+     *                                  the old data set.
+     * @see SuperDiffHelper
+     */
+    public void updateWithDiff(List<?> newData) throws IllegalArgumentException {
         if (mRecyclerView == null) {
-            throw new IllegalStateException("The adapter does not attach to recyclerview.");
+            mDataSet.clear();
+            mDataSet.addAll(newData);
+            return;
+        }
+        if (newData == mDataSet) {
+            throw new IllegalArgumentException("The object new data set is equals to the old data set.");
         }
         SuperDiffHelper helper = new SuperDiffHelper(this);
         DiffUtil.DiffResult diffResult = helper.update(mDataSet, newData);
         mDataSet.clear();
         mDataSet.addAll(newData);
         diffResult.dispatchUpdatesTo(this);
-    }
-
-    public static void addDefaultViewHolderForType(Class<?> type, Class<? extends AbsViewHolder<?>> holder) {
-        DEFAULT_VIEW_HOLDER_FOR_TYPE.put(type.hashCode(), holder);
     }
 
     @Deprecated
@@ -104,7 +126,7 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     }
 
     /**
-     * Set Whether show `No Data` view when data set is empty, when the data changes and is detected
+     * Set whether show `No Data` view when data set is empty, when the data changes and is detected
      * to be empty, the emptyData will add to data set and notify adapter rebinding ViewHolder.
      *
      * @param enableEmptyView True expressed enable, otherwise not.
@@ -154,7 +176,7 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
      * @param data      The data need be bind to item.
      * @param generator The interface use for generate ViewHolder.
      */
-    public <T> void setHeaderOrFooter(boolean header, @NonNull T data,
+    public <T> void setHeaderOrFooter(boolean header, @Nullable T data,
                                       @Nullable IViewHolderGenerator<T> generator) {
         if (generator == null) {
             mHolderGenerators.remove(data.getClass().hashCode());
@@ -214,7 +236,6 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         return size;
     }
 
-
     @Override
     public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
         super.onViewRecycled(holder);
@@ -242,20 +263,15 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
     @Override
     public long getItemId(int position) {
-        return super.getItemId(position);
-    }
-
-    private ViewTreeObserver.OnGlobalLayoutListener
-            mRecyclerViewTreeObserver = new ViewTreeObserver.OnGlobalLayoutListener() {
-        @Override
-        public void onGlobalLayout() {
-            if (mEnableEmptyView && mEmptyData != null) {
-                if (mEnableEmptyViewOnInit || !mFirstTimeLoadData) {
-                    updateEmptyView();
-                }
+        if (hasStableIds()) {
+            Object itemData = mDataSet.get(position);
+            RecyclerView.ViewHolder vh = getViewHolderFor(itemData);
+            if (vh instanceof AbsViewHolder) {
+                return ((AbsViewHolder<?>) vh).getItemDataIdInternal(position, itemData);
             }
         }
-    };
+        return super.getItemId(position);
+    }
 
     @Override
     public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
@@ -283,14 +299,6 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     @Nullable
     RecyclerView.ViewHolder getViewHolderFor(Object object) {
         return mRecyclerView.getRecycledViewPool().getRecycledView(object.hashCode());
-    }
-
-    private class DataObserver extends RecyclerView.AdapterDataObserver {
-        @Override
-        public void onChanged() {
-            super.onChanged();
-            mFirstTimeLoadData = false;
-        }
     }
 
     private void bindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position,
@@ -374,9 +382,6 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         return null;
     }
 
-    public static final class Empty {
-    }
-
     public interface OnItemClickListener {
         void onItemClick(View source, Object itemData, int position, Object other);
     }
@@ -388,5 +393,17 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     public interface IViewHolderGenerator<T> {
         @NonNull
         AbsViewHolder<T> onCreateViewHolder(ViewGroup parent);
+    }
+
+    // Expressed the empty item data.
+    public static final class Empty {
+    }
+
+    private class DataObserver extends RecyclerView.AdapterDataObserver {
+        @Override
+        public void onChanged() {
+            super.onChanged();
+            mFirstTimeLoadData = false;
+        }
     }
 }

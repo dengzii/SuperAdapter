@@ -18,20 +18,17 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 /**
- * <pre>
- * author : dengzi
- * e-mail : denua@foxmail.com
- * time   : 2019/07/09 10:11
- * desc   : abstract view holder for multi-type recycler view
- *
+ * The abstract view holder for recycler view.
+ * <p>
  * 继承这个类时, 类必须为 public, 当子类为内部类时, 必须为 static, 否则 Adapter 无法实例化
  * 且必须调用父类的默认构造器, 默认该 ViewHolder 带一个空的宽度为 match_parent 的 FrameLayout
  *
- * usage  :
- *
+ * <pre>
+ * Sample:
  * <code>
- *  public class MyViewHolder extends AbsViewHolder{
- *      public MyViewHolder(@NonNull ViewGroup parent){
+ * public class MyViewHolder extends AbsViewHolder {
+ *
+ *      public MyViewHolder(@NonNull ViewGroup parent ){
  *          super(parent);
  *          // setContentView(R.layout.item_user_data);
  *      }
@@ -44,23 +41,22 @@ import java.util.List;
  *  }
  *
  * </code>
- *
  * </pre>
+ *
+ * @author : dengzi
  */
 @SuppressWarnings({"WeakerAccess", "unchecked", "unused"})
 public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
 
     public static final FrameLayout.LayoutParams LAYOUT_MATCH_PARENT_VH = new FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
-
+    private final ViewGroup mParent;
+    public Class<?> itemClazz;
     private View.OnClickListener mOnClickListener;
     private View.OnLongClickListener mOnLongClickListener;
     private T mData;
     private SuperAdapter mAdapter;
     private List<Object> mDataSet;
-    private ViewGroup mParent;
-
-    public Class<?> itemClazz;
 
     /**
      * 默认 item 会创建并添加一个空白布局, 这个构造器必须被调用, 且必须为 public
@@ -105,6 +101,12 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
         return frameLayout;
     }
 
+    private static ViewGroup getAdaptContainer(View parent, FrameLayout.LayoutParams layoutParams) {
+        FrameLayout frameLayout = new FrameLayout(parent.getContext());
+        frameLayout.setLayoutParams(layoutParams);
+        return frameLayout;
+    }
+
     /**
      * 当 Adapter 调用 onCreateViewHolder 时 创建该 item 的时候调用这个方法
      * 这个时候, 这个 item 的容器布局已经创建了
@@ -121,12 +123,17 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
      */
     public abstract void onBindData(@NonNull T data, int position);
 
+    /**
+     * @param data     The adapter item data.
+     * @param position The item data adapter position.
+     * @param payloads The payloads.
+     */
     public void onBindData(@NonNull T data, int position, List<Object> payloads) {
 
     }
 
     /**
-     * 从当前 item 中查找指定 id 的 View
+     * Find view from ViewHolder's itemView.
      *
      * @param id  The id of the View need be find
      * @param <Z> The type of the View
@@ -173,8 +180,32 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
 
     }
 
+    /**
+     * When you call {@link RecyclerView.Adapter#setHasStableIds(boolean)} and pass
+     * <code>true</code>, the return value will be the id of item.
+     *
+     * @param position The adapter item position.
+     * @param data     The item data.
+     * @return The stable id of item.
+     */
+    protected long getItemDataId(int position, T data) {
+        return RecyclerView.NO_ID;
+    }
+
+
+    long getItemDataIdInternal(int position, Object data) {
+        return getItemDataId(position, ((T) data));
+    }
+
+    /**
+     * Return the changes of the old data and new data.
+     *
+     * @param old  The old data.
+     * @param new_ The new data.
+     * @return The payloads of changes.
+     */
     @Nullable
-    protected Object diff(Object other) {
+    protected Object getChangePayloads(@NonNull Object old, @NonNull Object new_) {
         return null;
     }
 
@@ -265,12 +296,6 @@ public abstract class AbsViewHolder<T> extends RecyclerView.ViewHolder {
         if (view != null && itemView instanceof ViewGroup) {
             ((ViewGroup) itemView).addView(view);
         }
-    }
-
-    private static ViewGroup getAdaptContainer(View parent, FrameLayout.LayoutParams layoutParams) {
-        FrameLayout frameLayout = new FrameLayout(parent.getContext());
-        frameLayout.setLayoutParams(layoutParams);
-        return frameLayout;
     }
 
     /**

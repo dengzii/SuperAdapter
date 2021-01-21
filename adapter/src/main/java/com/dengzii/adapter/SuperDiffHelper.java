@@ -6,11 +6,18 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
+/**
+ * The diff helper for compare the changes of item data.
+ *
+ * @author dengzi
+ *
+ * @see androidx.recyclerview.widget.DiffUtil.Callback
+ */
 public class SuperDiffHelper extends DiffUtil.Callback {
 
+    private final SuperAdapter mAdapter;
     private List<?> mOldData;
     private List<?> mNewData;
-    private SuperAdapter mAdapter;
 
     public SuperDiffHelper(SuperAdapter adapter) {
         this.mAdapter = adapter;
@@ -39,6 +46,13 @@ public class SuperDiffHelper extends DiffUtil.Callback {
         if (old == null || new_ == null) {
             return false;
         }
+        long oldId = mAdapter.getItemId(oldItemPosition);
+        long newId = mAdapter.getItemId(newItemPosition);
+
+        if (oldId != RecyclerView.NO_ID && newId != RecyclerView.NO_ID) {
+            return oldId == newId;
+        }
+
         return old.hashCode() == new_.hashCode();
     }
 
@@ -64,7 +78,7 @@ public class SuperDiffHelper extends DiffUtil.Callback {
         if (!(viewHolder instanceof AbsViewHolder)) {
             return null;
         }
-        return ((AbsViewHolder<?>) viewHolder).diff(new_);
+        return ((AbsViewHolder<?>) viewHolder).getChangePayloads(old, new_);
     }
 
     private Object getOrNull(List<?> data, int index) {
