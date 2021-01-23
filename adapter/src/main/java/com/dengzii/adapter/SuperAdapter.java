@@ -35,7 +35,6 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     private Object mHeader = null;
     private Object mFooter = null;
     private OnItemClickListener mOnItemClickListener;
-
     private final View.OnClickListener mItemClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -46,6 +45,9 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             }
         }
     };
+
+    private boolean mOnUpdateEmptyView = false;
+
     private OnItemLongClickListener mOnItemLongClickListener;
     private final View.OnLongClickListener mItemLongClickListener = new View.OnLongClickListener() {
         @Override
@@ -69,12 +71,7 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             new ViewTreeObserver.OnGlobalLayoutListener() {
                 @Override
                 public void onGlobalLayout() {
-                    if (mEnableEmptyView
-                            && mEmptyData != null
-                            && mEnableEmptyViewOnInit || !mFirstTimeLoadData
-                    ) {
-                        updateEmptyView();
-                    }
+                    updateEmptyView();
                 }
             };
 
@@ -284,7 +281,7 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             mDataObserver = new DataObserver();
         }
         registerAdapterDataObserver(mDataObserver);
-        mRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(mRecyclerViewTreeObserver);
+//        mRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(mRecyclerViewTreeObserver);
     }
 
     @Override
@@ -294,7 +291,7 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         if (mDataObserver != null) {
             unregisterAdapterDataObserver(mDataObserver);
         }
-        mRecyclerView.getViewTreeObserver().removeOnGlobalLayoutListener(mRecyclerViewTreeObserver);
+//        mRecyclerView.getViewTreeObserver().removeOnGlobalLayoutListener(mRecyclerViewTreeObserver);
         mRecyclerView = null;
     }
 
@@ -329,6 +326,14 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     }
 
     private void updateEmptyView() {
+        if (!mEnableEmptyView || mEmptyData == null
+                || (!mEnableEmptyViewOnInit && mFirstTimeLoadData)) {
+            return;
+        }
+        if (mOnUpdateEmptyView) {
+            return;
+        }
+        mOnUpdateEmptyView = true;
         if (mDataSet.isEmpty()) {
             mDataSet.add(mEmptyData);
             super.notifyDataSetChanged();
@@ -340,6 +345,7 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                 super.notifyDataSetChanged();
             }
         }
+        mOnUpdateEmptyView = false;
     }
 
     private AbsViewHolder<?> getHolder(Class<? extends AbsViewHolder<?>> clazz,
@@ -406,6 +412,19 @@ public class SuperAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         public void onChanged() {
             super.onChanged();
             mFirstTimeLoadData = false;
+            updateEmptyView();
+        }
+
+        @Override
+        public void onItemRangeRemoved(int positionStart, int itemCount) {
+            super.onItemRangeRemoved(positionStart, itemCount);
+            updateEmptyView();
+        }
+
+        @Override
+        public void onItemRangeInserted(int positionStart, int itemCount) {
+            super.onItemRangeInserted(positionStart, itemCount);
+            updateEmptyView();
         }
     }
 }

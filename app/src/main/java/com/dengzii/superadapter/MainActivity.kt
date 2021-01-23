@@ -1,6 +1,8 @@
 package com.dengzii.superadapter
 
+import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
@@ -21,10 +23,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        SuperAdapter.addDefaultViewHolderForType(
-            SuperAdapter.EMPTY::class.java,
-            EmptyViewHolder::class.java
-        )
+        SuperAdapter.addDefaultViewHolderForType(SuperAdapter.EMPTY::class.java, EmptyViewHolder::class.java)
 
         data.addAll(
             mutableListOf(
@@ -45,16 +44,6 @@ class MainActivity : AppCompatActivity() {
         ktx()
 //        bindViewHolder()
 
-        adapter.setOnItemClickListener { _, itemData, _, _ ->
-            // do something
-            if (itemData == SuperAdapter.EMPTY) {
-                data.add(0, Item("Item", "content content content", R.mipmap.ic_launcher))
-                adapter.notifyDataSetChanged()
-                return@setOnItemClickListener
-            }
-            Toast.makeText(this, itemData.toString(), Toast.LENGTH_SHORT).show()
-        }
-
         button.setOnClickListener {
             data.clear()
             adapter.notifyDataSetChanged()
@@ -70,9 +59,41 @@ class MainActivity : AppCompatActivity() {
             nData.removeAt(3)
             adapter.updateWithDiff(nData)
         }
+        bt_refresh.setOnClickListener {
+            data.clear()
+//            data.add(Item("Title11", "Content11", R.mipmap.ic_launcher))
+            progress.visibility = View.VISIBLE
+            it.postDelayed({
+//                data.add(Item("Title", "Content", R.mipmap.ic_launcher))
+                adapter.notifyItemRangeRemoved(0, 8)
+                progress.visibility = View.GONE
+            }, 1500)
+        }
+
         val recyclerView: RecyclerView = findViewById(R.id.rv_list)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
+
+        adapter.setOnItemClickListener { _, itemData, _, _ ->
+            // do something
+            if (itemData == SuperAdapter.EMPTY) {
+                data.add(0, Item("Item", "content content content", R.mipmap.ic_launcher))
+                adapter.notifyDataSetChanged()
+                return@setOnItemClickListener
+            }
+            Toast.makeText(this, itemData.toString(), Toast.LENGTH_SHORT).show()
+        }
+
+//        recyclerView.setViewCacheExtension(object : RecyclerView.ViewCacheExtension() {
+//            override fun getViewForPositionAndType(
+//                recycler: RecyclerView.Recycler,
+//                position: Int,
+//                type: Int
+//            ): View? {
+//                return TextView(this@MainActivity)
+//            }
+//
+//        })
     }
 
     private fun ktx() {

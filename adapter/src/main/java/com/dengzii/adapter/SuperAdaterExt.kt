@@ -147,7 +147,6 @@ inline fun <reified T> buildAbsViewHolder(
             builder = AbsViewHolderBuilder<T>(this)
             layoutRes?.apply {
                 setContentView(this)
-                return
             }
             action(builder, this)
         }

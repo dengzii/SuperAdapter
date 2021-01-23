@@ -6,9 +6,9 @@
 
     <Button
         android:id="@+id/button"
-        android:text="clean"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:text="clean"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -28,11 +28,32 @@
         app:layout_constraintStart_toEndOf="@+id/bt_add"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_list"
+    <Button
+        android:id="@+id/bt_refresh"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="refresh"
+        app:layout_constraintStart_toEndOf="@+id/bt_update"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button" />
+        android:layout_height="match_parent"
+        android:paddingTop="50dp">
+
+        <ProgressBar
+            android:id="@+id/progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/button" />
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
